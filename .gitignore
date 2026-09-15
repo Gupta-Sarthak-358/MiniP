@@ -11,3 +11,4 @@ models/*.pt
 data/historical.csv
 !data/*.zip
 *.db
+.uvicorn.pid
