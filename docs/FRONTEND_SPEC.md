@@ -1,4 +1,5 @@
 # Frontend Redesign Spec — handoff to designer
+**STATUS (2026-09-15): designs RECEIVED in `stitch_traffic_and_parking_dashboard/` and IMPLEMENTED as `frontend/index.html` (E07/D15). This doc is now the historical spec; the PRD brief + token sheets in the stitch folder are the as-built references.**
 **You are designing ONE page:** a real-time operations dashboard for traffic + parking forecasting. Deliver **PNGs** (visual target) + optional static **HTML**. An engineer implements the live version from your design. Read this whole doc first — Section 8 lists exactly what to deliver.
 
 ## 1. Product in one paragraph

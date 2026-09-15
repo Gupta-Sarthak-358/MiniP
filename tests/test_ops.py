@@ -36,3 +36,8 @@ def test_conformal_intervals_calibrated():
     p = c.get("/api/prediction", params={"location": "mall"}).json()
     assert p["interval_method"].startswith("conformal")
     assert p["calibration"]["30"]["empirical_coverage"] >= 0.85
+
+def test_metrics_endpoint():
+    m = c.get('/api/metrics').json()
+    assert m['avail_mae30'] > 0 and 0 <= m['avail_skill30'] <= 1
+    assert m['coverage30'] >= 0.85 and m['real_skill30'] > 0.3

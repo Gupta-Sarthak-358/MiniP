@@ -59,9 +59,9 @@ tests/                   17 regression tests
 & "C:\Users\satvi\Desktop\Mnemo\.venv\Scripts\python.exe" -m pytest tests/ -q
 ```
 
-17 tests: `test_api.py` (success / 404-validation / clamp / step-persistence / recommendation),
+18 tests: `test_api.py` (success / 404-validation / clamp / step-persistence / recommendation),
 `test_feature_parity.py` (training-serving parity + JSON-safe contract),
-`test_ops.py` (incident inject, drift status, conformal interval contract),
+`test_ops.py` (incident inject, drift status, conformal interval contract, metrics endpoint),
 `test_real.py` (replay contract + real-eval artifact).
 
 ## Evaluation & report (Tier 0 + ablations, all reproducible)

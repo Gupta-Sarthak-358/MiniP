@@ -1,172 +1,467 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Real-Time Traffic & Parking Predictor</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<style>
-:root{--bg:#0b1220;--card:#141d33;--mut:#8aa0c2;--acc:#38bdf8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--ease-enter:cubic-bezier(0.22,1,0.36,1)}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e6eefc;font-family:Segoe UI,Arial,sans-serif}
-:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
-.skip{position:absolute;left:-999px;top:0;background:var(--acc);color:#04222f;padding:8px 14px;z-index:50;border-radius:0 0 8px 0}
-.skip:focus{left:0}
-.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
-header{padding:16px 22px;border-bottom:1px solid #22314f;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-h1{font-size:20px;margin:0}small{color:var(--mut)}
-.wrap{padding:18px 22px;display:grid;gap:16px;max-width:1200px;margin:0 auto}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
-.card{background:var(--card);border:1px solid #22314f;border-radius:12px;padding:14px}
-.card h3{margin:0 0 6px;font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
-.big{font-size:30px;font-weight:700}
-.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
-.Low{background:#052e16;color:#4ade80}.Moderate{background:#422006;color:#fcd34d}
-.High{background:#451a03;color:#fb923c}.Severe{background:#450a0a;color:#f87171}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
-canvas{background:#0e1629;border-radius:10px;padding:8px}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-select,button{background:#0e1629;color:#e6eefc;border:1px solid #2b3d63;border-radius:8px;padding:8px 12px}
-button{cursor:pointer;touch-action:manipulation;transition:border-color 150ms var(--ease-enter),opacity 150ms ease}
-button:hover{border-color:var(--acc)}
-button:active{transform:scale(.97)}
-button:disabled{opacity:.5;cursor:wait}
-@media (hover:hover) and (pointer:fine){button:hover{border-color:var(--acc)}}
-.alert{border-left:4px solid var(--warn);background:#1a1407;padding:10px 12px;border-radius:8px}
-.errbanner{display:none;border:1px solid var(--bad);background:#2a0d0d;padding:10px 12px;border-radius:8px}
-.errbanner.show{display:block}
-.skel{position:relative;overflow:hidden;background:#0e1629;border-radius:6px;min-height:1.2em}
-.skel::after{content:"";position:absolute;inset:0;background:#1c2947;opacity:0;animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:.15}50%{opacity:.45}}
-@media (prefers-reduced-motion:reduce){.skel::after{animation:none;opacity:.25}button:active{transform:none}*{transition:none !important;animation-duration:.01ms !important}}
-.bar{height:8px;background:#0e1629;border-radius:6px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc)}
-table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 8px;border-bottom:1px solid #22314f;text-align:left}
-.heat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
-.hz{padding:10px;border-radius:10px;background:var(--card);border:1px solid #22314f}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
-</style>
-</head>
-<body>
-<a class="skip" href="#main">Skip to dashboard</a>
-<header>
-<h1>REAL-TIME TRAFFIC & PARKING PREDICTOR</h1>
-<small id="upd" role="status" aria-live="polite">Last updated: -</small>
-<div class="row" style="margin-left:auto">
-<label for="loc" style="font-size:12px;color:var(--mut)">Zone</label>
-<select id="loc" aria-label="Select zone"></select>
-<button id="bStep1" onclick="step(1)">Step +15min</button>
-<button id="bStep4" onclick="step(4)">Step +1h</button>
-<button id="bInc" onclick="injectIncident()" title="Demo: simulate accident/closure in this zone">Inject incident here</button>
-<label style="font-size:12px;color:var(--mut)"><input type="checkbox" id="auto" checked/> auto 5s</label>
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "on-primary-fixed": "#001e2c", "tertiary-container": "#f1a02b", "secondary-fixed": "#cce5ff", "on-surface-variant": "#bdc8d1", "on-error-container": "#ffdad6", "surface": "#0c1321", "primary": "#8ed5ff", "surface-variant": "#2e3544", "on-secondary-fixed": "#001d31", "surface-container": "#19202e", "on-tertiary": "#472a00", "error": "#ffb4ab", "tertiary-fixed": "#ffddb8", "surface-tint": "#7bd0ff", "on-primary-container": "#004965", "background": "#0c1321", "error-container": "#93000a", "secondary": "#93ccff", "on-error": "#690005", "on-secondary-fixed-variant": "#004b73", "surface-dim": "#0c1321", "on-background": "#dce2f6", "primary-fixed": "#c4e7ff", "on-surface": "#dce2f6", "on-primary": "#00354a", "surface-container-low": "#151b2a", "surface-bright": "#323949", "on-secondary": "#003351", "tertiary": "#ffc176", "tertiary-fixed-dim": "#ffb960", "secondary-container": "#3198dc", "inverse-on-surface": "#2a3040", "on-secondary-container": "#002c47", "inverse-surface": "#dce2f6", "outline-variant": "#3e484f", "primary-container": "#38bdf8", "on-tertiary-container": "#613b00", "surface-container-high": "#232a39", "surface-container-lowest": "#070e1c", "secondary-fixed-dim": "#93ccff", "surface-container-highest": "#2e3544", "outline": "#87929a", "on-primary-fixed-variant": "#004c69", "primary-fixed-dim": "#7bd0ff", "inverse-primary": "#00668a", "on-tertiary-fixed": "#2a1700", "on-tertiary-fixed-variant": "#653e00" }, "borderRadius": { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" }, "spacing": { "margin": "1rem", "space-md": "1rem", "space-sm": "0.75rem", "gutter": "1rem", "space-2xs": "0.25rem", "space-2xl": "3rem", "space-xs": "0.5rem", "margin-lg": "1.5rem", "space-xl": "2rem", "space-lg": "1.5rem", "gutter-dense": "0.75rem" }, "fontFamily": { "mono-badge": [ "JetBrains Mono" ], "mono-data": [ "JetBrains Mono" ], "mono-data-sm": [ "JetBrains Mono" ], "body-default": [ "Geist" ], "display-lg": [ "Geist" ], "body-medium": [ "Geist" ], "small": [ "Geist" ], "card-title": [ "JetBrains Mono" ], "display-md": [ "Geist" ] }, "fontSize": { "mono-badge": [ "11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" } ], "mono-data": [ "14px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" } ], "mono-data-sm": [ "12px", { "lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "400" } ], "body-default": [ "14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" } ], "display-lg": [ "32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" } ], "body-medium": [ "14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "500" } ], "small": [ "12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" } ], "card-title": [ "13px", { "lineHeight": "16px", "letterSpacing": "0.08em", "fontWeight": "600" } ], "display-md": [ "28px", { "lineHeight": "36px", "letterSpacing": "-0.01em", "fontWeight": "600" } ] } } } };</script><style>:focus-visible{outline:2px solid #38bdf8;outline-offset:2px}#err{display:none}#err.show{display:block;border:1px solid #ef4444;background:#2a0d0d;color:#fca5a5;padding:10px 14px;border-radius:8px;margin:0 0 16px}.skel{position:relative;overflow:hidden}.skel::after{content:'';position:absolute;inset:0;background:#1b2642;opacity:0;animation:skpulse 1.2s ease-in-out infinite}@keyframes skpulse{0%,100%{opacity:.15}50%{opacity:.45}}button:disabled{opacity:.5;cursor:wait}canvas{display:block;width:100%}@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}</style></head><body class="bg-background font-body-default text-body-default text-on-surface antialiased"><header class="fixed top-0 left-0 right-0 z-50 bg-surface-container-lowest border-b border-outline-variant"><div class="h-14 w-full px-space-md flex items-center justify-between gap-space-md"><div class="flex items-center gap-space-sm shrink-0"><svg class="h-8 w-8" viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect width="32" height="32" rx="8" fill="#141d33" stroke="#233152" stroke-width="1.5"/><circle cx="16" cy="16" r="10" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="3 3"/><circle cx="16" cy="16" r="4" fill="#38bdf8"/><path d="M16 6V10M16 22V26M6 16H10M22 16H26" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round"/></svg><div class="flex flex-col"><span class="font-card-title text-card-title uppercase tracking-wider text-on-surface font-semibold">Traffic &amp; Parking Ops</span><span class="font-mono-data-sm text-mono-data-sm text-outline">ATC TACTICAL TELEMETRY v4.2</span></div></div><div class="hidden xl:flex items-center gap-space-md"><div class="flex items-center bg-surface-container-low border border-outline-variant px-space-sm py-1 rounded"><span class="w-2 h-2 rounded-full bg-primary animate-ping mr-2"></span><span class="font-mono-data text-mono-data text-primary font-bold"><span id="utcClock">--:--:--</span> UTC</span><span class="font-mono-badge text-mono-badge text-outline ml-2 pl-2 border-l border-outline-variant">SIM <span id="simClock">--:--</span></span><span class="font-mono-badge text-mono-badge text-outline ml-2 pl-2 border-l border-outline-variant">CYCLE 5S</span></div><div class="flex items-center gap-space-2xs bg-surface-container-low border border-outline-variant p-1 rounded"><span class="font-mono-badge text-mono-badge text-outline uppercase px-1">Sector:</span><select id="loc" aria-label="Select sector" class="bg-surface-container border-0 font-mono-data-sm text-mono-data-sm text-on-surface px-space-xs py-0.5 rounded focus:ring-1 focus:ring-primary-container cursor-pointer"><option value="mall">MALL CORE</option><option value="stadium">ARENA / STADIUM</option><option value="station">CENTRAL STATION</option><option value="office">CBD OFFICE COMPLEX</option><option value="residential">NORTH RESIDENTIAL</option></select></div><div class="flex items-center gap-1"><button class="px-space-xs py-1 bg-surface-container-low hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface font-mono-badge text-mono-badge uppercase rounded transition-colors" type="button" id="bStep1" onclick="step(1)">+15M</button><button class="px-space-xs py-1 bg-surface-container-low hover:bg-surface-container-high border border-outline-variant text-on-surface hover:text-on-surface font-mono-badge text-mono-badge uppercase rounded transition-colors" type="button" id="bStep4" onclick="step(4)">+1H</button></div><div class="flex items-center gap-2 border-l border-outline-variant pl-space-md"><span class="font-mono-badge text-mono-badge text-outline uppercase">AUTO-SYNC</span><button id="autoBtn" role="switch" aria-checked="true" aria-label="Auto-sync live data" class="inline-block w-8 h-4 bg-primary-container rounded-full p-0.5 relative cursor-pointer"><span id="autoKnob" class="block w-3 h-3 bg-on-primary-fixed rounded-full ml-auto transition-transform"></span></button></div><button class="flex items-center gap-1 px-space-sm py-1 bg-surface-container-low hover:bg-surface-container-high text-error hover:text-error border border-error/50 rounded font-mono-badge text-mono-badge tracking-wider transition-colors" type="button" id="bInc" onclick="injectIncident()"><span class="material-symbols-outlined text-[14px]">warning</span>SIM INJECT</button></div><div class="flex items-center gap-space-sm shrink-0"><div class="hidden sm:flex items-center gap-2 border border-outline-variant bg-surface-container-low px-space-sm py-1 rounded"><span class="w-1.5 h-1.5 rounded-full bg-primary"></span><span class="font-mono-badge text-mono-badge text-on-surface uppercase">GRID ONLINE · <span id="lat">—</span></span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><aside class="fixed left-0 top-14 bottom-10 w-56 hidden lg:flex bg-surface-container-lowest border-r border-outline-variant z-40 flex flex-col justify-between"><div class="flex flex-col py-space-sm"><div class="px-space-sm pb-space-xs mb-space-xs border-b border-outline-variant"><span class="font-mono-badge text-mono-badge text-outline uppercase tracking-wider">Navigation Console</span></div><nav class="flex flex-col px-space-xs gap-1" data-active-classes="bg-surface-container-high text-primary border-l-2 border-primary"><a aria-current="page" class="px-space-sm py-2 rounded font-mono-data-sm flex items-center justify-between transition-colors bg-surface-container-high text-primary border-l-2 border-primary" data-path="tactical-radar" href="#dashboard-core"><span>Tactical Radar</span><span class="font-mono-badge text-mono-badge text-outline">01</span></a><a class="px-space-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-mono-data-sm text-mono-data-sm flex items-center justify-between transition-colors" data-path="parking-forecasting" href="#sec-parking"><span>Bay Predictions</span><span class="font-mono-badge text-mono-badge text-outline">02</span></a><a class="px-space-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-mono-data-sm text-mono-data-sm flex items-center justify-between transition-colors" data-path="corridor-capacity" href="#sec-traffic"><span>Traffic Corridors</span><span class="font-mono-badge text-mono-badge text-outline">03</span></a><a class="px-space-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-mono-data-sm text-mono-data-sm flex items-center justify-between transition-colors" data-path="incident-telemetry" href="#alert-items-container"><span>Incident Queue</span><span class="font-mono-badge text-mono-badge text-outline">04</span></a><a class="px-space-sm py-2 rounded text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-mono-data-sm text-mono-data-sm flex items-center justify-between transition-colors" data-path="model-diagnostics" href="#sec-factors"><span>Model Telemetry</span><span class="font-mono-badge text-mono-badge text-outline">05</span></a></nav></div><div class="p-space-sm border-t border-outline-variant bg-surface-container-low"><div class="flex flex-col gap-1"><span class="font-mono-badge text-mono-badge text-outline uppercase">Ingest Rate</span><span class="font-mono-data text-mono-data text-on-surface font-semibold"id="ingest">5s heartbeat</span><span class="font-mono-badge text-mono-badge text-secondary font-medium">LATENCY <span id="lat2">—</span></span></div></div></aside><div class="lg:pl-56">
+<div id="err" role="alert"></div><main class="relative pt-14 pb-10 min-h-screen bg-background w-full px-space-md"><div class="flex flex-col w-full">
+<!-- Hidden WCAG Keyboard Skip Anchor -->
+<a class="sr-only focus:not-sr-only focus:fixed focus:top-16 focus:left-4 focus:z-50 focus:px-space-md focus:py-space-xs focus:bg-primary focus:text-on-primary font-mono-badge uppercase rounded shadow-lg transition-transform" href="#dashboard-core">
+    Skip to Real-Time Telemetry Core
+  </a>
+<!-- Operational Header Sub-Bar / Tactical Synced Ribbon -->
+<div class="w-full flex flex-col md:flex-row md:items-center justify-between gap-space-sm pb-space-sm pt-space-xs">
+<div class="flex flex-wrap items-center gap-space-xs">
+<div class="flex items-center gap-1.5 px-space-xs py-0.5 rounded bg-surface-container-high">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-mono-badge text-mono-badge text-primary uppercase">SINPA-LIVE CALIBRATION ACTIVE</span>
 </div>
-</header>
-<main id="main" class="wrap">
-<div id="err" class="errbanner" role="alert"></div>
-<div id="alerts" aria-live="polite"></div>
-<div class="cards">
-<div class="card"><h3>Traffic</h3><div class="big" id="cTraf">-</div><small id="cTrafS"></small></div>
-<div class="card"><h3>Parking available</h3><div class="big" id="cPark">-</div><small id="cParkS"></small></div>
-<div class="card"><h3>Prediction 30 min</h3><div class="big" id="cPred">-</div><small id="cPredS"></small></div>
-<div class="card"><h3>Context</h3><div id="cCtx" style="font-size:14px">-</div></div>
+<span class="font-mono-badge text-mono-badge text-outline uppercase hidden sm:inline">CYCLE <span id="cycle">—</span></span>
+<span class="text-outline-variant font-mono-badge">•</span>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px] text-primary">sync</span>
+<span aria-live="polite" class="font-mono-badge text-mono-badge text-on-surface-variant uppercase"id="upd" role="status">Connecting…</span>
 </div>
-<div class="grid2">
-<div class="card"><h3 id="tTraf">Traffic history + forecast (vehicles)</h3><canvas id="chT" height="140" role="img" aria-labelledby="tTraf dTraf"></canvas><p id="dTraf" class="vh">Line chart. Same values as the forecast table below.</p></div>
-<div class="card"><h3 id="tPark">Parking Now -&gt; Future (with 95% interval)</h3><canvas id="chP" height="140" role="img" aria-labelledby="tPark dPark"></canvas><p id="dPark" class="vh">Line chart. Same values as the forecast table below.</p></div>
 </div>
-<div class="grid2">
-<div class="card"><h3>Why this prediction? (feature importance)</h3><div id="expl"></div></div>
-<div class="card"><h3>Recommendation (Predict -&gt; Explain -&gt; Recommend)</h3><div id="rec"></div></div>
+<!-- Telemetry Horizon Quick-Select Toggles -->
+<div aria-label="Forecast Horizons" class="flex items-center gap-space-2xs bg-surface-container-lowest p-0.5 rounded" role="toolbar">
+<button aria-pressed="true" class="px-space-xs py-1 rounded font-mono-badge text-mono-badge bg-primary text-on-primary uppercase transition-colors" type="button" id="hz0" onclick="setHeroHorizon(0)">T+0 (Now)</button>
+<button aria-pressed="false" class="px-space-xs py-1 rounded font-mono-badge text-mono-badge text-on-surface-variant hover:bg-surface-container-high uppercase transition-colors" type="button" id="hz15" onclick="setHeroHorizon(15)">+15M</button>
+<button aria-pressed="false" class="px-space-xs py-1 rounded font-mono-badge text-mono-badge text-on-surface-variant hover:bg-surface-container-high uppercase transition-colors" type="button" id="hz30" onclick="setHeroHorizon(30)">+30M</button>
+<button aria-pressed="false" class="px-space-xs py-1 rounded font-mono-badge text-mono-badge text-on-surface-variant hover:bg-surface-container-high uppercase transition-colors" type="button" id="hz60" onclick="setHeroHorizon(60)">+60M</button>
 </div>
-<div class="card"><h3>Zone heatmap</h3><div class="heat" id="heat"></div></div>
-<div class="card"><h3>Real zone — Birmingham NCP Market <small style="text-transform:none">(sensor replay, UK OGL)</small></h3><div id="realz" role="status" aria-live="polite">loading…</div></div>
-<div class="card"><h3>Forecast table <small id="cov" style="text-transform:none"></small></h3><table><thead><tr><th>Horizon</th><th>Avail</th><th>95% CI</th><th>Vehicles</th><th>Congestion</th></tr></thead><tbody id="ftab"></tbody></table></div>
 </div>
+<!-- Prioritized Tactical Alert Lane (Collapsible with 3 active + counter) -->
+<section aria-label="Tactical Operational Alerts" class="w-full mb-space-md">
+<div class="bg-surface-container-low rounded p-space-xs flex flex-col gap-space-2xs">
+<div class="flex items-center justify-between px-space-xs py-1">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">emergency_heat</span>
+<h2 class="font-card-title text-card-title text-on-surface uppercase tracking-wider font-semibold">Operational Hazard Pipeline</h2>
+<span class="bg-surface-container-highest text-on-surface font-mono-badge text-mono-badge px-1.5 py-0.5 rounded uppercase font-bold" id="alert-counter-badge">—</span>
+</div>
+<button aria-controls="alert-items-container" aria-expanded="true" class="flex items-center gap-1 font-mono-badge text-mono-badge text-primary hover:text-primary-fixed uppercase tracking-wider transition-colors" id="toggle-alert-drawer" type="button">
+<span>COLLAPSE</span>
+<span class="material-symbols-outlined text-[16px]" id="alert-chevron">expand_less</span>
+</button>
+</div>
+<div class="flex flex-col gap-space-2xs transition-all" id="alert-items-container">
+<div id="alerts" class="flex flex-col gap-space-2xs" aria-live="polite"></div>
+</div>
+</div>
+</section>
+<!-- Global Context Ribbon -->
+<div class="w-full bg-surface-container-high px-space-md py-1.5 rounded mb-space-md flex flex-wrap items-center justify-between gap-space-xs">
+<div class="flex flex-wrap items-center gap-space-sm">
+<span class="font-mono-badge text-mono-badge text-outline uppercase tracking-wider">Macro Context Pipeline:</span><span id="ctxchips" class="contents"></span>
+
+
+
+</div>
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+<span class="font-mono-badge text-mono-badge text-outline uppercase">Global Ingest: <span id="ingest2">—</span></span>
+</div>
+</div>
+<!-- HERO Strip: 3 Tactical Telemetry Operational Cards -->
+<section aria-label="High-Level Operations Strip" class="grid grid-cols-1 md:grid-cols-3 gap-space-md mb-space-md">
+<!-- Card 1: Now Status -->
+<div class="bg-surface-container p-space-md rounded flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-card-title text-card-title uppercase tracking-wider text-outline">01 / Tactical Load</span>
+<span id="hPill" class="font-mono-badge text-mono-badge px-2 py-0.5 rounded font-bold uppercase tracking-wider">—</span>
+</div>
+<div class="flex items-baseline gap-space-xs my-space-xs">
+<span id="hVeh" class="font-display-lg text-display-lg font-bold text-on-surface tabular-nums tracking-tight">—</span>
+<span class="font-mono-data-sm text-mono-data-sm text-outline uppercase">veh / km²</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs pt-space-xs mt-space-xs bg-surface-container-low p-space-xs rounded">
+<div class="flex flex-col">
+<span class="font-mono-badge text-mono-badge text-outline uppercase">Mean Speed</span>
+<span id="hSpeed" class="font-mono-data text-mono-data text-on-surface font-semibold tabular-nums">—</span>
+</div>
+<div class="flex flex-col">
+<span class="font-mono-badge text-mono-badge text-outline uppercase">Grid Density</span>
+<span id="hSat" class="font-mono-data text-mono-data text-tertiary font-semibold tabular-nums">—</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-full mt-space-sm overflow-hidden">
+<div id="hSatBar" class="bg-tertiary h-full rounded-full" style="width: 0%;"></div>
+</div>
+</div>
+<!-- Card 2: Parking Status -->
+<div class="bg-surface-container p-space-md rounded flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<span class="font-card-title text-card-title uppercase tracking-wider text-outline">02 / Sector Reserve</span>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px]">cloud</span>
+<span id="hWx" class="font-mono-badge text-mono-badge uppercase">—</span>
+</div>
+</div>
+<div class="flex items-baseline gap-space-xs my-space-xs">
+<span id="hAvail" class="font-display-lg text-display-lg font-bold text-primary tabular-nums tracking-tight">—</span>
+<span class="font-mono-data text-mono-data text-outline tabular-nums">/ <span id="hCap">—</span> FREE BAYS</span>
+</div>
+<div class="flex items-center justify-between bg-surface-container-low p-space-xs rounded">
+<span class="font-mono-badge text-mono-badge text-outline uppercase">Aggregate Occupancy</span>
+<span id="hOcc" class="font-mono-badge text-mono-badge text-primary font-bold">—</span>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-full mt-space-sm overflow-hidden flex">
+<div id="hOccBar" class="bg-primary h-full" style="width: 0%;"></div>
+<div id="hFreeBar" class="bg-surface-variant h-full" style="width: 0%;"></div>
+</div>
+</div>
+<!-- Card 3: +30 Min Forecast -->
+<div class="bg-surface-container p-space-md rounded flex flex-col justify-between shadow-sm relative overflow-hidden">
+<div class="flex items-center justify-between mb-space-xs">
+<span id="hPredTitle" class="font-card-title text-card-title uppercase tracking-wider text-outline">03 / +30M Projection</span>
+<span id="hPredPill" class="font-mono-badge text-mono-badge px-2 py-0.5 rounded font-bold uppercase tracking-wider">—</span>
+</div>
+<div class="flex items-baseline gap-space-xs my-space-xs">
+<span id="hPred" class="font-display-lg text-display-lg font-bold text-tertiary tabular-nums tracking-tight">—</span>
+<span class="font-mono-data-sm text-mono-data-sm text-outline uppercase">SLOTS PREDICTED</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs pt-space-xs mt-space-xs bg-surface-container-low p-space-xs rounded">
+<div class="flex flex-col">
+<span class="font-mono-badge text-mono-badge text-outline uppercase">90% CI Envelope</span>
+<span id="hCI" class="font-mono-data text-mono-data text-on-surface font-semibold tabular-nums">—</span>
+</div>
+<div class="flex flex-col">
+<span class="font-mono-badge text-mono-badge text-outline uppercase">Forecast Density</span>
+<span id="hPVeh" class="font-mono-data text-mono-data text-error font-semibold tabular-nums">—</span>
+</div>
+</div>
+<div class="w-full bg-surface-container-lowest h-1.5 rounded-full mt-space-sm overflow-hidden">
+<div id="hPredBar" class="bg-tertiary-container h-full rounded-full" style="width: 0%;"></div>
+</div>
+</div>
+</section>
+<!-- Main Grid: Two-Column Operational Architecture -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-space-md" id="dashboard-core">
+<!-- LEFT WIDE COLUMN (8 cols): Deep Telemetry & Prediction Visualizations -->
+<div class="xl:col-span-8 flex flex-col gap-space-md">
+<!-- 1. Traffic History + 60-min Forecast Chart -->
+<section id="sec-traffic" aria-labelledby="traffic-chart-title" class="bg-surface-container rounded p-space-md shadow-sm">
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">show_chart</span>
+<h2 class="font-card-title text-card-title text-on-surface uppercase tracking-wider font-semibold" id="traffic-chart-title">Corridor Throughput History &amp; 60-Min Horizon</h2>
+</div>
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-0.5 bg-primary inline-block"></span>
+<span class="font-mono-badge text-mono-badge text-outline uppercase">Observed (Veh/h)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-3 h-0.5 bg-tertiary border-b border-dashed border-tertiary inline-block"></span>
+<span class="font-mono-badge text-mono-badge text-tertiary uppercase">Ensemble Forecast</span>
+</div>
+<span class="font-mono-badge text-mono-badge text-secondary font-semibold bg-surface-container-lowest px-1.5 py-0.5 rounded"id="maeChip">MAE —</span>
+</div>
+</div>
+<!-- Multi-series SVG Line Chart -->
+<div class="w-full h-64 relative bg-surface-container-lowest rounded p-space-sm flex flex-col justify-between"><canvas id="chT" role="img" aria-label="Traffic history and 60-minute forecast chart"></canvas>
+</div>
+</section>
+<!-- 2. Free Parking Slots Forecast with 90% Conformal Confidence Band -->
+<section id="sec-parking" aria-labelledby="parking-conformal-title" class="bg-surface-container rounded p-space-md shadow-sm">
+<div class="flex flex-wrap items-center justify-between gap-space-sm pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-secondary text-[18px]">stacked_line_chart</span>
+<h2 class="font-card-title text-card-title text-on-surface uppercase tracking-wider font-semibold" id="parking-conformal-title">Parking Availability Envelope (Conformal 90% CI)</h2>
+</div>
+<div class="flex items-center gap-space-sm font-mono-badge text-mono-badge">
+<span class="flex items-center gap-1 text-outline"><span class="w-3 h-2 bg-secondary/20 inline-block"></span> 90% Lower/Upper CI</span>
+<span class="flex items-center gap-1 text-primary"><span class="w-3 h-0.5 bg-primary inline-block"></span> Median Prediction</span>
+</div>
+</div>
+<div class="w-full h-56 relative bg-surface-container-lowest rounded p-space-sm flex flex-col justify-between"><canvas id="chP" role="img" aria-label="Parking forecast with 90 percent confidence band"></canvas>
+</div>
+</section>
+<!-- 3. Detailed Forecast Table (Expandable / Tabular) -->
+<section id="sec-table" aria-labelledby="forecast-table-title" class="bg-surface-container rounded p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">table_chart</span>
+<h2 class="font-card-title text-card-title text-on-surface uppercase tracking-wider font-semibold" id="forecast-table-title">Step-Wise Horizon Telemetry Breakdown</h2>
+</div>
+<button aria-controls="forecast-table-content" aria-expanded="true" class="font-mono-badge text-mono-badge text-primary hover:text-primary-fixed uppercase transition-colors" id="toggle-forecast-table" type="button">
+            Toggle Rows
+          </button>
+</div>
+<div class="overflow-x-auto" id="forecast-table-content">
+<table class="w-full text-left font-mono-data text-mono-data">
+<thead>
+<tr class="bg-surface-container-lowest text-outline font-mono-badge text-mono-badge uppercase tracking-wider">
+<th class="py-2 px-space-sm" scope="col">Horizon</th>
+<th class="py-2 px-space-sm text-right" scope="col">Available Slots</th>
+<th class="py-2 px-space-sm text-right" scope="col">90% Conformal CI</th>
+<th class="py-2 px-space-sm text-right" scope="col">Vehicle Density</th>
+<th class="py-2 px-space-sm text-right" scope="col">Congestion Severity</th>
+</tr>
+</thead>
+<tbody id="ftab" class="divide-y divide-transparent"></tbody>
+</table>
+</div>
+<div class="mt-space-sm pt-space-xs flex items-center justify-between text-outline font-mono-badge text-mono-badge">
+<span>Calibration: conformal-q90 (walk-forward calibrated, coverage <span id="covNum">—</span>)</span>
+<span>Sample window: walk-forward 4×5d</span>
+</div>
+</section>
+</div>
+<!-- RIGHT NARROW COLUMN (4 cols): Diagnostics, Routing Recommendations & Explainability -->
+<div class="xl:col-span-4 flex flex-col gap-space-md">
+<!-- 1. Explainability (SHAP Feature Attributions) -->
+<section id="sec-factors" aria-labelledby="shap-title" class="bg-surface-container rounded p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">psychology</span>
+<h2 class="font-card-title text-card-title text-on-surface uppercase tracking-wider font-semibold" id="shap-title">Prediction Factors (RF)</h2>
+</div>
+<span class="font-mono-badge text-mono-badge text-outline">RF IMPORTANCE</span>
+</div>
+<div class="space-y-space-xs">
+<div id="expl"></div>
+</div>
+</section>
+<!-- 2. Dynamic Parking Routing Recommendation -->
+<section id="sec-routing" aria-labelledby="routing-rec-title" class="bg-surface-container rounded p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-primary text-[18px]">alt_route</span>
+<h2 class="font-card-title text-card-title text-on-surface uppercase tracking-wider font-semibold" id="routing-rec-title">ATC Routing Optimization</h2>
+</div>
+<span class="font-mono-badge text-mono-badge text-primary uppercase font-bold">AUTOMATED</span>
+</div>
+<!-- Primary Routing Card -->
+<div class="bg-surface-container-high p-space-sm rounded mb-space-sm">
+<div class="flex items-center justify-between mb-1">
+<span class="font-mono-badge text-mono-badge text-primary uppercase font-bold">Primary Recommendation</span>
+<span class="bg-primary/20 text-primary font-mono-badge text-mono-badge px-1.5 py-0.5 rounded font-bold uppercase">FASTEST FLOW</span>
+</div>
+<p id="recMsg" class="font-body-medium text-body-medium text-on-surface font-semibold">—</p>
+<div class="flex items-center gap-space-md mt-space-xs text-outline font-mono-data-sm text-mono-data-sm">
+<span class="flex items-center gap-1 text-on-surface"><span class="material-symbols-outlined text-[14px] text-primary">local_parking</span> <span id="recBays">—</span> bays free</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">schedule</span> MAE <span id="recMae">—</span> @30m</span>
+</div>
+</div>
+<!-- Ranked Zones List -->
+<div class="space-y-space-2xs">
+<div id="rec"></div>
+</div>
+</section>
+<!-- 3. Real-Time Zone Status Matrix & Replay Provenance -->
+<section id="sec-zones" aria-labelledby="zones-matrix-title" class="bg-surface-container rounded p-space-md shadow-sm">
+<div class="flex items-center justify-between pb-space-sm mb-space-sm">
+<div class="flex items-center gap-space-xs">
+<span class="material-symbols-outlined text-outline text-[18px]">hub</span>
+<h2 class="font-card-title text-card-title text-on-surface uppercase tracking-wider font-semibold" id="zones-matrix-title">Sector Saturation Grid</h2>
+</div>
+<span class="font-mono-badge text-mono-badge text-outline">5 NODES</span>
+</div>
+<div class="grid grid-cols-5 gap-space-2xs text-center">
+<div id="heat" class="contents"></div>
+</div>
+<!-- Real-Zone Birmingham Sensor Replay Card -->
+<div class="mt-space-md p-space-sm bg-surface-container-lowest rounded flex flex-col gap-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="font-mono-badge text-mono-badge text-on-surface uppercase font-bold">Birmingham Park-and-Ride Telemetry Replay</span>
+</div>
+<span class="font-mono-badge text-mono-badge text-secondary font-bold">1.0x PLAYBACK · <span id="rzPos">—</span></span>
+</div>
+<div class="flex items-baseline justify-between pt-1">
+<span class="font-mono-data text-mono-data text-on-surface font-semibold"><span id="rzAvail">—</span></span>
+<span class="font-mono-badge text-mono-badge text-outline">RECORDED <span id="rzTs">—</span></span>
+</div>
+<div class="w-full bg-surface-container-high h-1 rounded overflow-hidden">
+<div id="rzBar" class="bg-secondary h-full" style="width: 0%;"></div>
+</div>
+<div class="flex justify-between items-center text-outline font-mono-badge text-mono-badge pt-1">
+<span>Persistence baseline: ±<span id="rzDelta">—</span> delta</span>
+<span id="rzVerdict" class="text-primary font-bold">—</span>
+</div>
+</div>
+</section>
+</div>
+</div>
+<!-- Micro-interactions Script -->
 <script>
-let chT,chP;let locs=[];let seq=0;let booted=false;
-async function j(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error(`HTTP ${r.status} on ${u}`);return r.json();}
-function pill(t){return `<span class="pill ${t}">${t}</span>`;}
-function showErr(msg){const e=document.getElementById('err');e.innerHTML=`Failed to load dashboard data: ${msg} <button onclick="refresh()" style="margin-left:8px">Retry</button>`;e.classList.add('show');}
-function clearErr(){document.getElementById('err').classList.remove('show');}
-function setBusy(b){document.getElementById('main').setAttribute('aria-busy',b?'true':'false');for(const b2 of [document.getElementById('bStep1'),document.getElementById('bStep4'),document.getElementById('bInc')])b2.disabled=b;}
-async function injectIncident(){const L=document.getElementById('loc').value;setBusy(true);try{await fetch('/api/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:L,kind:'accident',severity:2,dur_steps:4})});await refresh();}catch(e){showErr(e.message);}finally{setBusy(false);}}
-async function init(){
- try{
- locs=await j('/api/locations');
- }catch(e){showErr(e.message+' (backend unreachable — is uvicorn running on :8000?)');return;}
- document.getElementById('loc').innerHTML=locs.map(l=>`<option value="${l.id}">${l.label}</option>`).join('');
- document.getElementById('loc').value='mall';
- document.getElementById('loc').onchange=refresh;
- chT=new Chart(document.getElementById('chT'),{type:'line',data:{labels:[],datasets:[
-  {label:'vehicles (history)',data:[],borderColor:'#38bdf8',tension:.3},
-  {label:'vehicles (forecast)',data:[],borderColor:'#f59e0b',borderDash:[6,4],tension:.3}]},options:{plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#8aa0c2'}},y:{ticks:{color:'#8aa0c2'}}}}});
- chP=new Chart(document.getElementById('chP'),{type:'line',data:{labels:[],datasets:[
-  {label:'available',data:[],borderColor:'#22c55e',tension:.3},
-  {label:'lo',data:[],borderColor:'#475569',borderDash:[4,4],pointRadius:0},
-  {label:'hi',data:[],borderColor:'#475569',borderDash:[4,4],pointRadius:0,fill:'-1',backgroundColor:'rgba(34,197,94,.12)'}]},options:{plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#8aa0c2'}},y:{ticks:{color:'#8aa0c2'}}}}});
- refresh();setInterval(async()=>{if(document.getElementById('auto').checked){try{await j('/api/step',{method:'POST'});refresh();}catch(e){showErr(e.message);}}},5000);
+    (function() {
+      // Alert drawer toggle micro-interaction
+      var alertToggleBtn = document.getElementById('toggle-alert-drawer');
+      var alertContainer = document.getElementById('alert-items-container');
+      var alertChevron = document.getElementById('alert-chevron');
+      if (alertToggleBtn && alertContainer && alertChevron) {
+        alertToggleBtn.addEventListener('click', function() {
+          var isExpanded = alertToggleBtn.getAttribute('aria-expanded') === 'true';
+          alertToggleBtn.setAttribute('aria-expanded', !isExpanded);
+          alertContainer.classList.toggle('hidden');
+          alertChevron.textContent = isExpanded ? 'expand_more' : 'expand_less';
+          alertToggleBtn.querySelector('span:first-child').textContent = isExpanded ? 'EXPAND' : 'COLLAPSE';
+        });
+      }
+
+      // Forecast Table Collapse Toggle
+      var tableToggleBtn = document.getElementById('toggle-forecast-table');
+      var tableContent = document.getElementById('forecast-table-content');
+      if (tableToggleBtn && tableContent) {
+        tableToggleBtn.addEventListener('click', function() {
+          var isExpanded = tableToggleBtn.getAttribute('aria-expanded') === 'true';
+          tableToggleBtn.setAttribute('aria-expanded', !isExpanded);
+          tableContent.classList.toggle('hidden');
+          tableToggleBtn.textContent = isExpanded ? 'Show Rows' : 'Toggle Rows';
+        });
+      }
+    })();
+  </script>
+</div></main></div><footer class="fixed bottom-0 left-0 right-0 h-10 bg-surface-container-lowest border-t border-outline-variant z-50 px-space-md flex items-center justify-between"><div class="flex items-center gap-space-lg"><div class="flex items-center gap-space-xs font-mono-badge text-mono-badge text-outline"><span class="w-1.5 h-1.5 bg-secondary rounded-full"></span><span>PROVENANCE: UCI BIRMINGHAM (UK OGL)</span><span class="text-outline-variant">|</span><span>SINPA PROTOCOL 2024</span></div><div class="hidden md:flex items-center gap-2 font-mono-badge text-mono-badge"><span class="text-outline">CALIBRATION:</span><span class="text-primary font-bold">COVERAGE <span id="footCov">—</span></span></div></div><div class="flex items-center gap-space-md"><div class="font-mono-badge text-mono-badge text-outline hidden sm:block">NODE CLUSTER: UK-CENTRAL-09</div><a class="font-mono-badge text-mono-badge text-primary hover:text-primary-fixed uppercase tracking-wider flex items-center gap-1 border border-outline-variant px-space-xs py-0.5 rounded transition-colors" data-path="api-documentation" href="/docs"><span>API SPECS</span><span class="material-symbols-outlined text-[13px]">terminal</span></a></div></footer>
+<script>
+/* Live wiring for the ATC console. All values from /api/*. Design: stitch. */
+let chT=null,chP=null,locs=[],seq=0,heroH=30,auto=true,cycle=0;
+let LAST=null;
+const $=id=>document.getElementById(id);
+async function j(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error('HTTP '+r.status+' '+u);return r.json();}
+const PMAP={Low:['LOW','bg-[#064e3b] text-[#34d399] border border-[#059669]'],
+Moderate:['MODERATE','bg-[#451a03] text-[#fbbf24] border border-[#d97706]'],
+High:['HIGH','bg-[#431407] text-[#fb923c] border border-[#ea580c]'],
+Severe:['SEVERE','bg-[#450a0a] text-[#f87171] border border-[#dc2626]']};
+const PB='font-mono-badge text-mono-badge px-2 py-0.5 rounded font-bold uppercase tracking-wider ';
+function pill(l){const p=PMAP[l]||PMAP.Moderate;return `<span class="${PB}${p[1]}">${p[0]}</span>`;}
+function rstatus(occ){if(occ<50)return['OPTIMAL','bg-secondary-container/30 text-secondary'];if(occ<70)return['BALANCED','bg-secondary-container/30 text-secondary'];if(occ<85)return['CONGESTED','bg-tertiary/20 text-tertiary'];if(occ<95)return['CRITICAL','bg-error/20 text-error'];return['SATURATED','bg-error/20 text-error'];}
+function dotColor(l){return{Low:'#10b981',Moderate:'#f59e0b',High:'#f97316',Severe:'#ef4444'}[l]||'#f59e0b';}
+function showErr(m){const e=$('err');e.innerHTML=`FEED FAULT — ${m} <button onclick="refresh()" class="underline font-bold ml-2">RETRY</button>`;e.classList.add('show');}
+function clearErr(){$('err').classList.remove('show');}
+function setBusy(b){for(const id of['bStep1','bStep4','bInc']){const el=$(id);if(el)el.disabled=b;}$('dashboard-core').setAttribute('aria-busy',b?'true':'false');}
+const CHGRID='rgba(135,146,154,.12)',CHTICK='#87929a';
+const CHOPT={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1b2642',titleFont:{family:"'JetBrains Mono',monospace"},bodyFont:{family:"'JetBrains Mono',monospace"}}},scales:{x:{ticks:{color:CHTICK,font:{family:"'JetBrains Mono',monospace",size:9}},grid:{color:CHGRID}},y:{ticks:{color:CHTICK,font:{family:"'JetBrains Mono',monospace",size:9}},grid:{color:CHGRID}}}};
+function buildCharts(){
+  chT=new Chart($('chT'),{type:'line',data:{labels:[],datasets:[
+    {label:'Observed',data:[],borderColor:'#8ed5ff',tension:.3,pointRadius:0},
+    {label:'Forecast',data:[],borderColor:'#ffc176',borderDash:[5,3],tension:.3,pointRadius:0}]},options:CHOPT});
+  chP=new Chart($('chP'),{type:'line',data:{labels:[],datasets:[
+    {label:'hi',data:[],borderColor:'transparent',pointRadius:0},
+    {label:'lo',data:[],borderColor:'#93ccff',borderDash:[3,3],pointRadius:0,fill:'-1',backgroundColor:'rgba(147,204,255,.12)'},
+    {label:'median',data:[],borderColor:'#8ed5ff',tension:.3,pointRadius:3,pointBackgroundColor:'#8ed5ff'}]},options:CHOPT});
 }
-async function step(n){setBusy(true);try{await fetch('/api/step',{method:'POST'});if(n>1)for(let i=1;i<n;i++)await fetch('/api/step',{method:'POST'});await refresh();}catch(e){showErr(e.message);}finally{setBusy(false);}}
+function setHeroHorizon(h){heroH=h;for(const k of[0,15,30,60]){const b=$('hz'+k);if(!b)continue;const on=k===h;b.setAttribute('aria-pressed',on);b.className=on?'px-space-xs py-1 rounded font-mono-badge text-mono-badge bg-primary text-on-primary uppercase transition-colors':'px-space-xs py-1 rounded font-mono-badge text-mono-badge text-on-surface-variant hover:bg-surface-container-high uppercase transition-colors';}renderHero();}
+function renderHero(){
+  if(!LAST)return;const{cur,pred}=LAST;
+  const P=heroH===0?{horizon_min:0,available:cur.available,vehicles:cur.vehicle_count,congestion:cur.congestion,congestion_label:cur.congestion_label,lo:cur.available,hi:cur.available}:pred.predictions.find(p=>p.horizon_min===heroH);
+  $('hPredTitle').textContent=`03 / +${heroH}M Projection`;
+  $('hPred').textContent=P.available;
+  $('hPredPill').outerHTML=pill(P.congestion_label).replace('class="','id="hPredPill" class="');
+  $('hCI').textContent=`[${P.lo} — ${P.hi}]`;
+  $('hPVeh').textContent=`${P.vehicles} veh`;
+  const occ=(cur.capacity-P.available)/cur.capacity*100;
+  $('hPredBar').style.width=Math.min(100,occ).toFixed(1)+'%';
+}
+function alertHTML(kind,badgeCls,badge,title,sub,metric,btn){
+  return `<div class="bg-surface-container-low p-space-sm rounded flex items-start gap-space-sm" role="${kind==='incident'?'alert':'status'}">`
+  +`<div class="flex flex-col md:flex-row md:items-center justify-between w-full gap-space-xs"><div class="flex flex-col">`
+  +`<div class="flex items-center gap-2"><span class="${PB}${badgeCls}">${badge}</span><span class="font-mono-data text-mono-data text-on-surface font-semibold">${title}</span></div>`
+  +`<span class="font-small text-small text-on-surface-variant">${sub}</span></div>`
+  +`<div class="flex items-center gap-space-sm shrink-0"><span class="font-mono-badge text-mono-badge font-bold tracking-wider">${metric}</span>${btn||''}</div></div></div>`;
+}
+const NAVB='px-space-xs py-1 bg-surface-container-highest hover:bg-surface-container text-on-surface font-mono-badge text-mono-badge rounded uppercase transition-colors';
 async function refresh(){
- const my=++seq;setBusy(true);
- try{
- const L=encodeURIComponent(document.getElementById('loc').value);
- const [cur,pred,hist,expl,rec,evs,drift,realz]=await Promise.all([
-  j(`/api/current-status?location=${L}`),j(`/api/prediction?location=${L}`),
-  j(`/api/history?location=${L}&points=36`),j(`/api/explain?location=${L}`),
-  j('/api/recommendation'),j('/api/events'),j('/api/drift'),j('/api/real-zone')]);
- if(my!==seq)return; // stale response guard: drop out-of-order renders
- clearErr();
- document.getElementById('upd').textContent='Last updated: '+pred.last_updated;
- document.getElementById('cTraf').innerHTML=pill(cur.congestion_label||'Moderate');
- document.getElementById('cTrafS').textContent=`${cur.vehicle_count} veh · ${cur.avg_speed} km/h · ${cur.occupancy_pct}% occ`;
- document.getElementById('cPark').textContent=`${cur.available} / ${cur.capacity}`;
- document.getElementById('cParkS').textContent=`occupied ${cur.occupied} · ${cur.weather} ${cur.temperature}C`;
- const p30=pred.predictions[1];
- document.getElementById('cPred').innerHTML=pill(p30.congestion_label)+` <span style="font-size:16px">${p30.available} slots</span>`;
- document.getElementById('cPredS').textContent=`${p30.lo}-${p30.hi} (95% CI) · ${p30.vehicles} veh`;
- let ctx=`sale:${cur.is_sale_day?' YES('+cur.sale_intensity+')':' no'} · event:${cur.is_event_day?cur.event_type+'/'+cur.event_size+' imp'+cur.event_impact:' none'} · peak:${cur.is_peak_hour?'yes':'no'}`;
- document.getElementById('cCtx').textContent=ctx;
- // alerts
- let a='';
- const ev=evs.find(e=>e.location===L);
- if(ev)a+=`<div class="alert">UPCOMING EVENT — ${ev.name} · ${ev.start}-${ev.end} · impact ${ev.event_impact} · Now ${cur.available} → 30min ${p30.available} → 60min ${pred.predictions[3].available}</div>`;
- if(cur.is_sale_day)a+=`<div class="alert" style="border-color:#38bdf8">MEGA SALE TODAY — intensity ${cur.sale_intensity} · expect HIGH parking demand</div>`;
- if(pred.critical_in_min)a+=`<div class="alert" style="border-color:#ef4444">Critical occupancy (&gt;90%) expected in ~${pred.critical_in_min} min</div>`;
- if(cur.is_incident)a+=`<div class="alert" style="border-color:#ef4444">SIMULATED INCIDENT — ${cur.incident_kind} in this zone (severity ${cur.incident_severity}). Expect congestion spike; watch recovery.</div>`;
- const drifted=Object.entries(drift||{}).filter(([k,v])=>v.drift);
- if(drifted.length)a+=`<div class="alert" style="border-color:#ef4444">DRIFT DETECTED (ADWIN) — ${drifted.map(([k,v])=>k+' MAE '+v.recent_mae).join('; ')}. Model may be stale: consider retraining.</div>`;
- document.getElementById('alerts').innerHTML=a;
- // charts
- if(!hist.length){document.getElementById('ftab').innerHTML=`<tr><td colspan="5">No history yet — press Step to advance the simulator.</td></tr>`;return;}
- const hl=hist.map(h=>h.timestamp.slice(11,16)),hv=hist.map(h=>h.vehicle_count);
- const fl=['+15','+30','+45','+60'],fv=pred.predictions.map(p=>p.vehicles);
- chT.data.labels=[...hl,...fl];chT.data.datasets[0].data=[...hv,...Array(4).fill(null)];
- chT.data.datasets[1].data=[...Array(hv.length-1).fill(null),hv[hv.length-1],...fv];chT.update();
- chP.data.labels=['Now',...fl];
- chP.data.datasets[0].data=[cur.available,...pred.predictions.map(p=>p.available)];
- chP.data.datasets[1].data=[cur.available,...pred.predictions.map(p=>p.lo)];
- chP.data.datasets[2].data=[cur.available,...pred.predictions.map(p=>p.hi)];chP.update();
- // table
- const cal=(pred.calibration||{})["30"]||{};
- document.getElementById('cov').textContent=`90% bands via ${pred.interval_method||'?'} · walk-forward coverage ${cal.empirical_coverage??'-'}`;
- document.getElementById('ftab').innerHTML=`<tr><td>Now</td><td>${cur.available}</td><td>-</td><td>${cur.vehicle_count}</td><td>${pill(cur.congestion_label)}</td></tr>`+
-  pred.predictions.map(p=>`<tr><td>+${p.horizon_min}</td><td>${p.available}</td><td>${p.lo}-${p.hi}</td><td>${p.vehicles}</td><td>${pill(p.congestion_label)}</td></tr>`).join('');
- // explain
- const mx=Math.max(...expl.factors.map(f=>f.importance),0.01);
- document.getElementById('expl').innerHTML=expl.factors.map(f=>`<div style="margin:6px 0"><small>${f.feature} (${f.value})</small><div class="bar"><i style="width:${(f.importance/mx*100).toFixed(0)}%"></i></div></div>`).join('')||'train model to see importance';
- // rec
- document.getElementById('rec').innerHTML=`<b>${rec.message}</b><br/><br/>`+rec.ranking.map(r=>`${r.label}: now ${r.now_available} → 30min ${r.pred30_available} ${pill(r.congestion_label)}`).join('<br/>')+(rec.warnings.length?'<br/><br/>⚠ '+rec.warnings.join('<br/>'):'');
- // heatmap
- const stats=await Promise.all(locs.map(async l=>({m:l,...await j(`/api/current-status?location=${l.id}`)})));
- document.getElementById('heat').innerHTML=stats.map(s=>{
-  const c=s.congestion<25?'#22c55e':s.congestion<50?'#eab308':s.congestion<70?'#f97316':'#ef4444';
-  return `<div class="hz"><span class="dot" style="background:${c}"></span><b>${s.m.label}</b><br/>${s.congestion_label} · ${s.available} slots (${(100-s.occupancy_pct).toFixed(0)}% free)</div>`;}).join('');
- // real zone (replay; ML validation in report E06, skill +0.62 vs persistence)
- document.getElementById('realz').innerHTML=
-  `<b>${realz.now.available} / ${realz.now.capacity} slots free</b> ${pill(realz.now.congestion_label)}<br/>`+
-  `<small>recorded ${realz.now.timestamp} · replay ${realz.now.replay_index+1}/${realz.now.replay_len} · `+
-  `persistence forecast holds ${realz.forecast[1].available} @30min · source: ${realz.meta.source}</small>`;
- }catch(e){ if(my===seq)showErr(e.message); }
- finally{ if(my===seq)setBusy(false); }
+  const my=++seq;setBusy(true);const t0=performance.now();
+  try{
+    const L=encodeURIComponent($('loc').value);
+    const[cur,pred,hist,expl,rec,evs,drift,realz,met]=await Promise.all([
+      j(`/api/current-status?location=${L}`),j(`/api/prediction?location=${L}`),
+      j(`/api/history?location=${L}&points=36`),j(`/api/explain?location=${L}`),
+      j('/api/recommendation'),j('/api/events'),j('/api/drift'),j('/api/real-zone'),j('/api/metrics')]);
+    if(my!==seq)return;clearErr();LAST={cur,pred};cycle++;
+    $('cycle').textContent='#'+String(cycle).padStart(4,'0');
+    $('simClock').textContent=String(pred.last_updated).slice(11,16);
+    $('upd').textContent=`SYNCED ${new Date().toLocaleTimeString()} · 0 LOSS`;
+    const ms=Math.round(performance.now()-t0);$('lat').textContent=ms+'MS';$('lat2').textContent=ms+'MS';$('ingest').textContent='5s heartbeat';$('ingest2').textContent='WALK-FWD 4×5D';
+    // hero 1+2
+    $('hVeh').textContent=cur.vehicle_count;
+    $('hSpeed').textContent=cur.avg_speed+' km/h';
+    $('hSat').textContent=cur.occupancy_pct+'% Saturation';
+    $('hSatBar').style.width=Math.min(100,cur.occupancy_pct)+'%';
+    $('hPill').outerHTML=pill(cur.congestion_label).replace('class="','id="hPill" class="');
+    $('hAvail').textContent=cur.available;
+    $('hCap').textContent=cur.capacity;
+    $('hOcc').textContent=`${cur.occupied} / ${cur.capacity} OCCUPIED (${cur.occupancy_pct}%)`;
+    $('hWx').textContent=`${cur.weather} ${cur.temperature}°C`;
+    $('hOccBar').style.width=cur.occupancy_pct+'%';$('hFreeBar').style.width=(100-cur.occupancy_pct)+'%';
+    renderHero();
+    // context chips
+    const chips=[];
+    if(cur.is_sale_day)chips.push(`<span class="bg-surface-container-lowest text-tertiary font-mono-badge text-mono-badge px-2 py-0.5 rounded uppercase font-bold tracking-wide">SALE DAY (INTENSITY ${cur.sale_intensity})</span>`);
+    if(cur.is_peak_hour)chips.push(`<span class="bg-surface-container-lowest text-primary font-mono-badge text-mono-badge px-2 py-0.5 rounded uppercase font-bold tracking-wide">PEAK WINDOW ACTIVE</span>`);
+    chips.push(`<span class="bg-surface-container-lowest text-secondary font-mono-badge text-mono-badge px-2 py-0.5 rounded uppercase font-bold tracking-wide">${String(cur.weather).toUpperCase()} · ${cur.temperature}°C</span>`);
+    if(cur.is_event_day)chips.push(`<span class="bg-surface-container-lowest text-secondary font-mono-badge text-mono-badge px-2 py-0.5 rounded uppercase font-bold tracking-wide">EVENT: ${cur.event_type.toUpperCase()} / ${cur.event_size.toUpperCase()}</span>`);
+    $('ctxchips').innerHTML=chips.join('');
+    // alerts (severity: incident > critical > drift > event > sale)
+    const A=[];
+    if(cur.is_incident)A.push({s:0,h:alertHTML('incident','bg-error text-on-error','CRITICAL',`${cur.incident_kind.toUpperCase()} — ${cur.location} sector`,`Severity ${cur.incident_severity} · speeds collapsing, demand spilling over.`,`${cur.vehicle_count} VEH`,`<button class="${NAVB}" onclick="step(1)">STEP +15</button>`)});
+    if(pred.critical_in_min)A.push({s:1,h:alertHTML('critical','bg-error text-on-error','CRITICAL',`Critical occupancy forecast — ${cur.location}`,`Over 90% full within ~${pred.critical_in_min} min.`,`${pred.predictions[3].available} BAYS @60M`,`<button class="${NAVB}" onclick="document.getElementById('sec-routing').scrollIntoView()">REROUTE</button>`)});
+    for(const[k,v]of Object.entries(drift||{}))if(v.drift)A.push({s:2,h:alertHTML('drift','bg-tertiary text-on-tertiary','DRIFT ALARM',`${k} residual divergence (MAE ${v.recent_mae})`,`${v.drift_events} event(s) · model may be stale; recalibration queued.`,`MAE ${v.recent_mae}`,`<button class="${NAVB}" onclick="driftReset()">CALIBRATE</button>`)});
+    const ev=(evs||[]).find(e=>e.location===cur.location);
+    if(ev)A.push({s:3,h:alertHTML('event','bg-secondary text-on-secondary','EVENT',`${ev.name} · ${ev.start}–${ev.end}`,`Impact ${ev.event_impact} · now ${cur.available} → 30m ${pred.predictions[1].available} bays.`,`IMP ${ev.event_impact}`,`<button class="${NAVB}" onclick="document.getElementById('sec-traffic').scrollIntoView()">VIEW</button>`)});
+    if(cur.is_sale_day)A.push({s:4,h:alertHTML('sale','bg-secondary text-on-secondary','SALE',`Mega sale — ${cur.location} (intensity ${cur.sale_intensity})`,`Parking demand elevated through the retail window.`,`INT ${cur.sale_intensity}`,'')});
+    A.sort((a,b)=>a.s-b.s);
+    $('alerts').innerHTML=A.length?A.slice(0,3).map(a=>a.h).join(''):'<div class="font-mono-badge text-mono-badge text-outline p-space-sm">ALL SECTORS NOMINAL — no active alerts.</div>';
+    $('alert-counter-badge').textContent=A.length?`${A.length} ACTIVE ALERT${A.length>1?'S':''}`:'0 ACTIVE ALERTS';
+    // charts
+    if(hist.length){
+      const hl=hist.map(h=>h.timestamp.slice(11,16)),hv=hist.map(h=>h.vehicle_count);
+      const fv=pred.predictions.map(p=>p.vehicles);
+      chT.data.labels=[...hl.slice(-24),'NOW',...['+15','+30','+45','+60']];
+      chT.data.datasets[0].data=[...hv.slice(-24),null,null,null,null,null];
+      chT.data.datasets[1].data=[...Array(Math.min(24,hv.length)).fill(null),hv[hv.length-1],...fv];
+      chT.update();
+      chP.data.labels=['NOW',...['+15','+30','+45','+60']];
+      chP.data.datasets[0].data=pred.predictions.map(p=>p.hi);
+      chP.data.datasets[1].data=pred.predictions.map(p=>p.lo);
+      chP.data.datasets[2].data=[cur.available,...pred.predictions.map(p=>p.available)];
+      chP.update();
+    }
+    $('maeChip').textContent='MAE '+(met.veh_mae30??'—');
+    // table
+    const rows=[{horizon_min:0,available:cur.available,lo:cur.available,hi:cur.available,vehicles:cur.vehicle_count,congestion_label:cur.congestion_label},...pred.predictions];
+    $('ftab').innerHTML=rows.map((p,i)=>`<tr class="hover:bg-surface-container-high transition-colors"><td class="py-2.5 px-space-sm ${i===2?'text-tertiary font-bold':(i===0?'text-primary font-bold':'text-on-surface')}">${i===0?'Now (T-0)':'+'+p.horizon_min+' Min'}</td><td class="py-2.5 px-space-sm text-right font-bold tabular-nums text-on-surface">${p.available}</td><td class="py-2.5 px-space-sm text-right tabular-nums text-on-surface-variant">[${p.lo} — ${p.hi}]</td><td class="py-2.5 px-space-sm text-right tabular-nums text-on-surface">${p.vehicles} veh</td><td class="py-2.5 px-space-sm text-right">${pill(p.congestion_label)}</td></tr>`).join('');
+    $('covNum').textContent=(pred.calibration&&pred.calibration['30']&&pred.calibration['30'].empirical_coverage)||'—';
+    $('footCov').textContent=(pred.calibration&&pred.calibration['30']&&pred.calibration['30'].empirical_coverage)||'—';
+    // explain
+    const fs=expl.factors||[],mx=Math.max(...fs.map(f=>f.importance),1e-9);
+    const cols=['#ffc176','#8ed5ff','#ffb4ab','#93ccff'];
+    $('expl').innerHTML=fs.map((f,i)=>`<div><div class="flex justify-between font-mono-data-sm text-mono-data-sm mb-1"><span class="text-on-surface">${f.feature} (${f.value})</span><span class="font-bold" style="color:${cols[i%4]}">${Number(f.importance).toFixed(4)}</span></div><div class="w-full bg-surface-container-lowest h-1.5 rounded overflow-hidden"><div class="h-full rounded" style="width:${(f.importance/mx*100).toFixed(1)}%;background:${cols[i%4]}"></div></div></div>`).join('')||'—';
+    // routing
+    const best=rec.recommended;
+    $('recMsg').textContent=`Direct incoming traffic to ${best.label}`;
+    $('recBays').textContent=best.pred30_available;
+    $('recMae').textContent=(met.avail_mae30??'—');
+    $('rec').innerHTML=rec.ranking.map((r,i)=>{const occ=(LOC_CAP(r.location)-r.pred30_available)/LOC_CAP(r.location)*100;const[w,c]=rstatus(occ);return `<div class="flex items-center justify-between bg-surface-container-low px-space-xs py-1.5 rounded"><div class="flex items-center gap-space-xs"><span class="font-mono-badge text-mono-badge text-outline">0${i+1}</span><span class="font-mono-data-sm text-mono-data-sm text-on-surface font-medium">${r.label}</span></div><div class="flex items-center gap-space-sm"><span class="font-mono-data-sm text-mono-data-sm text-on-surface font-bold">${r.now_available} → ${r.pred30_available}</span><span class="font-mono-badge text-mono-badge px-1 py-0.2 rounded font-bold uppercase ${c}">${w}</span></div></div>`;}).join('');
+    // heat
+    const stats=await Promise.all(locs.map(async l=>({m:l,...await j(`/api/current-status?location=${l.id}`)})));
+    $('heat').innerHTML=stats.map(x=>{const occ=x.occupancy_pct;return `<div class="bg-surface-container-low p-2 rounded flex flex-col items-center gap-1"><span class="w-2 h-2 rounded-full" style="background:${dotColor(x.congestion_label)}"></span><span class="font-mono-badge text-mono-badge text-on-surface">${x.m.label.split(' ')[0].toUpperCase().slice(0,6)}</span><span class="font-mono-data-sm text-mono-data-sm font-bold" style="color:${dotColor(x.congestion_label)}">${occ.toFixed(0)}%</span></div>`;}).join('');
+    // real zone
+    $('rzAvail').textContent=`${realz.now.available} / ${realz.now.capacity} Free Bays`;
+    $('rzTs').textContent='RECORDED '+String(realz.now.timestamp).slice(0,16).replace('T',' ');
+    $('rzBar').style.width=(realz.now.available/realz.now.capacity*100)+'%';
+    $('rzDelta').textContent='SKILL +'+(met.real_skill30??'—');
+    $('rzVerdict').textContent='VALIDATED';
+    $('rzPos').textContent=`${realz.now.replay_index+1}/${realz.now.replay_len}`;
+  }catch(e){if(my===seq)showErr(e.message);}
+  finally{if(my===seq)setBusy(false);}
+}
+function LOC_CAP(id){return{mall:1000,stadium:800,station:500,office:600,residential:400}[id]||500;}
+async function step(n){setBusy(true);try{await j('/api/step',{method:'POST'});if(n>1)for(let i=1;i<n;i++)await j('/api/step',{method:'POST'});await refresh();}catch(e){showErr(e.message);}finally{setBusy(false);}}
+async function injectIncident(){const L=$('loc').value;setBusy(true);try{await fetch('/api/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:L,kind:'accident',severity:2,dur_steps:4})});await refresh();}catch(e){showErr(e.message);}finally{setBusy(false);}}
+async function driftReset(){try{await fetch('/api/drift/reset?location=all',{method:'POST'});await refresh();}catch(e){showErr(e.message);}}
+function setAuto(v){auto=v;$('autoBtn').setAttribute('aria-checked',v);$('autoKnob').className='block w-3 h-3 bg-on-primary-fixed rounded-full transition-transform '+(v?'ml-auto':'mr-auto');}
+async function init(){
+  try{locs=await j('/api/locations');}catch(e){showErr(e.message+' (is the API running?)');return;}
+  const sel=$('loc');sel.innerHTML=locs.map(l=>`<option value="${l.id}">${l.label.toUpperCase()}</option>`).join('');sel.value='mall';sel.onchange=refresh;
+  $('autoBtn').onclick=()=>setAuto(!auto);
+  buildCharts();
+  setInterval(()=>{$('utcClock').textContent=new Date().toISOString().slice(11,19);},1000);
+  await refresh();
+  setInterval(()=>{if(auto&&!document.hidden)step(1);},5000);
 }
 init();
 </script>

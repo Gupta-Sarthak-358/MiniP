@@ -1,3 +1,4 @@
+import json
 import os
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -148,6 +149,33 @@ def real_zone():
     """Birmingham NCP replay through the same contract (D14). ML validation: E06."""
     return {"meta": REAL_META, "now": REPLAY.current(),
             "forecast": REPLAY.forecast(), "last_updated": SIM.now.isoformat()}
+
+_METRICS_CACHE = {}
+
+def _load_json(name):
+    if name not in _METRICS_CACHE:
+        try:
+            with open(os.path.join(BASE, "models", name)) as f:
+                _METRICS_CACHE[name] = json.load(f)
+        except Exception:
+            _METRICS_CACHE[name] = {}
+    return _METRICS_CACHE[name]
+
+@app.get("/api/metrics")
+def metrics():
+    """Real walk-forward numbers for the UI (MAE chips, calibration footer)."""
+    ev = _load_json("eval_walkforward.json")
+    conf = _load_json("conformal.json")
+    real = _load_json("real_eval.json")
+    get = lambda *ks: ev.get(ks[0], {}).get(ks[1], {}) if len(ks) == 2 else {}
+    return {
+        "veh_mae30": get("rf_veh", "vehicles_30").get("MAE"),
+        "veh_skill30": get("rf_veh", "vehicles_30").get("skill_vs_persist"),
+        "avail_mae30": get("rf_av", "available_30").get("MAE"),
+        "avail_skill30": get("rf_av", "available_30").get("skill_vs_persist"),
+        "coverage30": (conf.get("30") or {}).get("empirical_coverage"),
+        "real_skill30": (real.get("rf") or {}).get("skill30"),
+    }
 
 @app.get("/api/drift")
 def drift_status():

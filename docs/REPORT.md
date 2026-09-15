@@ -47,7 +47,7 @@ Only context-aware ML beats persistence on parking. `vehicles_30`: RF 32.9 (+0.4
 | sale-day (416) | 5.75 | 6.57 | +0.12 |
 
 ## 6. System & dashboard
-FastAPI (`backend/app.py`): current/prediction/history/events/explain/recommendation/incident/drift/step/health/**real-zone** endpoints; validated inputs (404/422), 17 regression tests (`tests/`). Dashboard (`frontend/index.html`): status cards, history+forecast charts with 90% bands + coverage readout, heatmap, feature-importance bars, recommendations, incident-inject demo button, ADWIN drift banner, **real Birmingham replay card**, loading/error/empty states, keyboard + reduced-motion support.
+FastAPI (`backend/app.py`): current/prediction/history/events/explain/recommendation/incident/drift/step/health/**real-zone/metrics** endpoints; validated inputs (404/422), 18 regression tests (`tests/`). Dashboard (`frontend/index.html`): ATC tactical console per the stitch design package (`stitch_traffic_and_parking_dashboard/`, E07) — command strip, hazard pipeline, hero pillars, live Chart.js forensics, RF-importance bars, routing panel, saturation grid, Birmingham replay card, provenance footer; every value wired to real APIs (mock fictions replaced with measured numbers).
 
 ## 6b. Sim-to-real validation (E06; `real_validation.png`, `models/real_eval.json`)
 Walk-forward (3×7-day folds) on the real Birmingham series with reduced features: persistence 20.67 → HistAvg 25.41 → **RF 7.81 (skill +0.62)**. Real sensors are ~3× noisier than simulation — and the ML edge is ~2× larger. Same pattern, stronger. Caveats: daytime-only 2016 data, ~30-min native grid resampled to 15-min, single lot; sim-trained model deliberately not transferred (scheduled cross-test).

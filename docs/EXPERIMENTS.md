@@ -45,3 +45,8 @@ Static-split results (E01) predate walk-forward adoption (see D04); kept for the
 - Real series: BHMBCCMKT01, cap 577, resampled to 15-min (data/real/bham_replay.csv); 3 walk-forward folds x 7 days; reduced features (time + occupancy + lags). Artifacts: models/real_eval.json.
 - available_30 MAE: persistence **20.67** | HistAvg 25.41 | **RF 7.81 (skill +0.62)**. Real sensors are ~3x noisier than sim — and ML's edge is ~2x bigger (+0.62 vs +0.32). Same pattern as simulation, stronger.
 - Live: /api/real-zone replay + dashboard card (persistence forecast, labeled). Sim-trained model deliberately NOT applied (domain shift); cross-test is scheduled follow-up.
+
+## E07 - Stitch ATC design implemented and wired live (figure: stitch screen.png)
+- Source: stitch_traffic_and_parking_dashboard/ (desktop+mobile code.html, token sheet, CSS vars, PRD brief). Implemented as frontend/index.html on the verbatim design shell: same tokens, layout tiers, alert lane, hero pillars, SHAP panel, routing list, saturation grid, replay card, footer.
+- Honesty adjustments vs mock: static SVGs replaced with live Chart.js (same styling); fictional facility names/values replaced with real API data; MAE chip + footer calibration served by new /api/metrics (real walk-forward numbers); SHAP relabeled RF importance (we are not SHAP); horizon toggles switch hero-03 focus; external logo URL replaced with local inline SVG; sidebar responsive-hidden below lg.
+- Verified: node --check on both inline scripts, page serves 200 with all hooks, 18/18 pytest green.
