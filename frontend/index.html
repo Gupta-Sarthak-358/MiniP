@@ -454,10 +454,20 @@ async function step(n){setBusy(true);try{await j('/api/step',{method:'POST'});if
 async function injectIncident(){const L=$('loc').value;setBusy(true);try{await fetch('/api/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:L,kind:'accident',severity:2,dur_steps:4})});await refresh();}catch(e){showErr(e.message);}finally{setBusy(false);}}
 async function driftReset(){try{await fetch('/api/drift/reset?location=all',{method:'POST'});await refresh();}catch(e){showErr(e.message);}}
 function setAuto(v){auto=v;$('autoBtn').setAttribute('aria-checked',v);$('autoKnob').className='block w-3 h-3 bg-on-primary-fixed rounded-full transition-transform '+(v?'ml-auto':'mr-auto');}
+// Sidebar: exactly one active item (they are section shortcuts, not pages).
+const NAV_ON=['bg-surface-container-high','text-primary','border-l-2','border-primary'];
+function wireNav(){
+  const links=[...document.querySelectorAll('nav[data-active-classes] a')];
+  if(!links.length)return;
+  const mark=(a)=>{links.forEach(x=>{x.classList.remove(...NAV_ON);x.classList.add('text-on-surface-variant');x.removeAttribute('aria-current');});a.classList.add(...NAV_ON);a.classList.remove('text-on-surface-variant');a.setAttribute('aria-current','page');};
+  links.forEach(a=>a.addEventListener('click',()=>mark(a)));
+  window.addEventListener('hashchange',()=>{const t=links.find(x=>x.getAttribute('href')===location.hash);if(t)mark(t);});
+}
 async function init(){
   try{locs=await j('/api/locations');}catch(e){showErr(e.message+' (is the API running?)');return;}
   const sel=$('loc');sel.innerHTML=locs.map(l=>`<option value="${l.id}">${l.label.toUpperCase()}</option>`).join('');sel.value='mall';sel.onchange=refresh;
   $('autoBtn').onclick=()=>setAuto(!auto);
+  wireNav();
   buildCharts();
   setInterval(()=>{$('utcClock').textContent=new Date().toISOString().slice(11,19);},1000);
   await refresh();
