@@ -1,0 +1,50 @@
+{
+  "time": {
+    "available_30": 26.353,
+    "vehicles_30": 37.117,
+    "available_60": 26.31,
+    "available_30_delta": 0.0,
+    "vehicles_30_delta": 0.0,
+    "available_60_delta": 0.0
+  },
+  "+state": {
+    "available_30": 4.42,
+    "vehicles_30": 33.909,
+    "available_60": 6.321,
+    "available_30_delta": -21.933,
+    "vehicles_30_delta": -3.208,
+    "available_60_delta": -19.989
+  },
+  "+weather": {
+    "available_30": 4.444,
+    "vehicles_30": 33.911,
+    "available_60": 6.335,
+    "available_30_delta": -21.909,
+    "vehicles_30_delta": -3.206,
+    "available_60_delta": -19.975
+  },
+  "+event": {
+    "available_30": 4.451,
+    "vehicles_30": 33.531,
+    "available_60": 6.315,
+    "available_30_delta": -21.902,
+    "vehicles_30_delta": -3.586,
+    "available_60_delta": -19.995
+  },
+  "+sale/hol": {
+    "available_30": 4.422,
+    "vehicles_30": 33.258,
+    "available_60": 6.243,
+    "available_30_delta": -21.931,
+    "vehicles_30_delta": -3.859,
+    "available_60_delta": -20.067
+  },
+  "+incident (full)": {
+    "available_30": 4.429,
+    "vehicles_30": 33.233,
+    "available_60": 6.256,
+    "available_30_delta": -21.924,
+    "vehicles_30_delta": -3.884,
+    "available_60_delta": -20.054
+  }
+}

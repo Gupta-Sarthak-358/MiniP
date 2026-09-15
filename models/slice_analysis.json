@@ -1,0 +1,32 @@
+{
+  "all": {
+    "n": 8636,
+    "rf_MAE": 4.312,
+    "persist_MAE": 5.954,
+    "rf_skill_vs_persist": 0.2758
+  },
+  "event-day": {
+    "n": 672,
+    "rf_MAE": 7.398,
+    "persist_MAE": 9.264,
+    "rf_skill_vs_persist": 0.2014
+  },
+  "incident": {
+    "n": 39,
+    "rf_MAE": 7.353,
+    "persist_MAE": 8.672,
+    "rf_skill_vs_persist": 0.1521
+  },
+  "sale-day": {
+    "n": 416,
+    "rf_MAE": 5.752,
+    "persist_MAE": 6.573,
+    "rf_skill_vs_persist": 0.1249
+  },
+  "peak-hour": {
+    "n": 2520,
+    "rf_MAE": 4.226,
+    "persist_MAE": 6.455,
+    "rf_skill_vs_persist": 0.3453
+  }
+}

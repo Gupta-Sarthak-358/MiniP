@@ -1,0 +1,22 @@
+{
+  "15": {
+    "q90": 6.21,
+    "empirical_coverage": 0.9,
+    "n": 9600
+  },
+  "30": {
+    "q90": 8.99,
+    "empirical_coverage": 0.9,
+    "n": 9600
+  },
+  "45": {
+    "q90": 11.3,
+    "empirical_coverage": 0.9,
+    "n": 9600
+  },
+  "60": {
+    "q90": 13.36,
+    "empirical_coverage": 0.9,
+    "n": 9600
+  }
+}

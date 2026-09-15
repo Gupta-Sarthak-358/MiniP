@@ -1,0 +1,51 @@
+{
+  "features": [
+    "hour",
+    "day_of_week",
+    "is_weekend",
+    "is_peak_hour",
+    "is_night",
+    "is_holiday",
+    "is_sale_day",
+    "sale_intensity",
+    "is_event_day",
+    "event_type_enc",
+    "event_size_enc",
+    "event_impact",
+    "hours_to_event",
+    "hours_since_event",
+    "is_event_active",
+    "is_incident",
+    "incident_severity",
+    "weather_enc",
+    "temperature",
+    "vehicle_count",
+    "avg_speed",
+    "occupied",
+    "available",
+    "occupancy_pct",
+    "location_enc",
+    "capacity"
+  ],
+  "y_avail": [
+    "available_15",
+    "available_30",
+    "available_45",
+    "available_60"
+  ],
+  "y_veh": [
+    "vehicles_15",
+    "vehicles_30",
+    "vehicles_45",
+    "vehicles_60"
+  ],
+  "y_cong": [
+    "congestion_15",
+    "congestion_30",
+    "congestion_45",
+    "congestion_60"
+  ],
+  "advanced": "xgboost-cuda",
+  "train_rows": 34544,
+  "test_rows": 8636
+}

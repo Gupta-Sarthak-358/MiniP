@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Real-Time Traffic & Parking Predictor</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0b1220;--card:#141d33;--mut:#8aa0c2;--acc:#38bdf8;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--ease-enter:cubic-bezier(0.22,1,0.36,1)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e6eefc;font-family:Segoe UI,Arial,sans-serif}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:4px}
+.skip{position:absolute;left:-999px;top:0;background:var(--acc);color:#04222f;padding:8px 14px;z-index:50;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+header{padding:16px 22px;border-bottom:1px solid #22314f;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+h1{font-size:20px;margin:0}small{color:var(--mut)}
+.wrap{padding:18px 22px;display:grid;gap:16px;max-width:1200px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid #22314f;border-radius:12px;padding:14px}
+.card h3{margin:0 0 6px;font-size:13px;color:var(--mut);text-transform:uppercase;letter-spacing:.06em}
+.big{font-size:30px;font-weight:700}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:700}
+.Low{background:#052e16;color:#4ade80}.Moderate{background:#422006;color:#fcd34d}
+.High{background:#451a03;color:#fb923c}.Severe{background:#450a0a;color:#f87171}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+canvas{background:#0e1629;border-radius:10px;padding:8px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+select,button{background:#0e1629;color:#e6eefc;border:1px solid #2b3d63;border-radius:8px;padding:8px 12px}
+button{cursor:pointer;touch-action:manipulation;transition:border-color 150ms var(--ease-enter),opacity 150ms ease}
+button:hover{border-color:var(--acc)}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.5;cursor:wait}
+@media (hover:hover) and (pointer:fine){button:hover{border-color:var(--acc)}}
+.alert{border-left:4px solid var(--warn);background:#1a1407;padding:10px 12px;border-radius:8px}
+.errbanner{display:none;border:1px solid var(--bad);background:#2a0d0d;padding:10px 12px;border-radius:8px}
+.errbanner.show{display:block}
+.skel{position:relative;overflow:hidden;background:#0e1629;border-radius:6px;min-height:1.2em}
+.skel::after{content:"";position:absolute;inset:0;background:#1c2947;opacity:0;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.15}50%{opacity:.45}}
+@media (prefers-reduced-motion:reduce){.skel::after{animation:none;opacity:.25}button:active{transform:none}*{transition:none !important;animation-duration:.01ms !important}}
+.bar{height:8px;background:#0e1629;border-radius:6px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--acc)}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:6px 8px;border-bottom:1px solid #22314f;text-align:left}
+.heat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.hz{padding:10px;border-radius:10px;background:var(--card);border:1px solid #22314f}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to dashboard</a>
+<header>
+<h1>REAL-TIME TRAFFIC & PARKING PREDICTOR</h1>
+<small id="upd" role="status" aria-live="polite">Last updated: -</small>
+<div class="row" style="margin-left:auto">
+<label for="loc" style="font-size:12px;color:var(--mut)">Zone</label>
+<select id="loc" aria-label="Select zone"></select>
+<button id="bStep1" onclick="step(1)">Step +15min</button>
+<button id="bStep4" onclick="step(4)">Step +1h</button>
+<button id="bInc" onclick="injectIncident()" title="Demo: simulate accident/closure in this zone">Inject incident here</button>
+<label style="font-size:12px;color:var(--mut)"><input type="checkbox" id="auto" checked/> auto 5s</label>
+</div>
+</header>
+<main id="main" class="wrap">
+<div id="err" class="errbanner" role="alert"></div>
+<div id="alerts" aria-live="polite"></div>
+<div class="cards">
+<div class="card"><h3>Traffic</h3><div class="big" id="cTraf">-</div><small id="cTrafS"></small></div>
+<div class="card"><h3>Parking available</h3><div class="big" id="cPark">-</div><small id="cParkS"></small></div>
+<div class="card"><h3>Prediction 30 min</h3><div class="big" id="cPred">-</div><small id="cPredS"></small></div>
+<div class="card"><h3>Context</h3><div id="cCtx" style="font-size:14px">-</div></div>
+</div>
+<div class="grid2">
+<div class="card"><h3 id="tTraf">Traffic history + forecast (vehicles)</h3><canvas id="chT" height="140" role="img" aria-labelledby="tTraf dTraf"></canvas><p id="dTraf" class="vh">Line chart. Same values as the forecast table below.</p></div>
+<div class="card"><h3 id="tPark">Parking Now -&gt; Future (with 95% interval)</h3><canvas id="chP" height="140" role="img" aria-labelledby="tPark dPark"></canvas><p id="dPark" class="vh">Line chart. Same values as the forecast table below.</p></div>
+</div>
+<div class="grid2">
+<div class="card"><h3>Why this prediction? (feature importance)</h3><div id="expl"></div></div>
+<div class="card"><h3>Recommendation (Predict -&gt; Explain -&gt; Recommend)</h3><div id="rec"></div></div>
+</div>
+<div class="card"><h3>Zone heatmap</h3><div class="heat" id="heat"></div></div>
+<div class="card"><h3>Real zone — Birmingham NCP Market <small style="text-transform:none">(sensor replay, UK OGL)</small></h3><div id="realz" role="status" aria-live="polite">loading…</div></div>
+<div class="card"><h3>Forecast table <small id="cov" style="text-transform:none"></small></h3><table><thead><tr><th>Horizon</th><th>Avail</th><th>95% CI</th><th>Vehicles</th><th>Congestion</th></tr></thead><tbody id="ftab"></tbody></table></div>
+</div>
+<script>
+let chT,chP;let locs=[];let seq=0;let booted=false;
+async function j(u,o){const r=await fetch(u,o);if(!r.ok)throw new Error(`HTTP ${r.status} on ${u}`);return r.json();}
+function pill(t){return `<span class="pill ${t}">${t}</span>`;}
+function showErr(msg){const e=document.getElementById('err');e.innerHTML=`Failed to load dashboard data: ${msg} <button onclick="refresh()" style="margin-left:8px">Retry</button>`;e.classList.add('show');}
+function clearErr(){document.getElementById('err').classList.remove('show');}
+function setBusy(b){document.getElementById('main').setAttribute('aria-busy',b?'true':'false');for(const b2 of [document.getElementById('bStep1'),document.getElementById('bStep4'),document.getElementById('bInc')])b2.disabled=b;}
+async function injectIncident(){const L=document.getElementById('loc').value;setBusy(true);try{await fetch('/api/incident',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:L,kind:'accident',severity:2,dur_steps:4})});await refresh();}catch(e){showErr(e.message);}finally{setBusy(false);}}
+async function init(){
+ try{
+ locs=await j('/api/locations');
+ }catch(e){showErr(e.message+' (backend unreachable — is uvicorn running on :8000?)');return;}
+ document.getElementById('loc').innerHTML=locs.map(l=>`<option value="${l.id}">${l.label}</option>`).join('');
+ document.getElementById('loc').value='mall';
+ document.getElementById('loc').onchange=refresh;
+ chT=new Chart(document.getElementById('chT'),{type:'line',data:{labels:[],datasets:[
+  {label:'vehicles (history)',data:[],borderColor:'#38bdf8',tension:.3},
+  {label:'vehicles (forecast)',data:[],borderColor:'#f59e0b',borderDash:[6,4],tension:.3}]},options:{plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#8aa0c2'}},y:{ticks:{color:'#8aa0c2'}}}}});
+ chP=new Chart(document.getElementById('chP'),{type:'line',data:{labels:[],datasets:[
+  {label:'available',data:[],borderColor:'#22c55e',tension:.3},
+  {label:'lo',data:[],borderColor:'#475569',borderDash:[4,4],pointRadius:0},
+  {label:'hi',data:[],borderColor:'#475569',borderDash:[4,4],pointRadius:0,fill:'-1',backgroundColor:'rgba(34,197,94,.12)'}]},options:{plugins:{legend:{labels:{color:'#cbd5e1'}}},scales:{x:{ticks:{color:'#8aa0c2'}},y:{ticks:{color:'#8aa0c2'}}}}});
+ refresh();setInterval(async()=>{if(document.getElementById('auto').checked){try{await j('/api/step',{method:'POST'});refresh();}catch(e){showErr(e.message);}}},5000);
+}
+async function step(n){setBusy(true);try{await fetch('/api/step',{method:'POST'});if(n>1)for(let i=1;i<n;i++)await fetch('/api/step',{method:'POST'});await refresh();}catch(e){showErr(e.message);}finally{setBusy(false);}}
+async function refresh(){
+ const my=++seq;setBusy(true);
+ try{
+ const L=encodeURIComponent(document.getElementById('loc').value);
+ const [cur,pred,hist,expl,rec,evs,drift,realz]=await Promise.all([
+  j(`/api/current-status?location=${L}`),j(`/api/prediction?location=${L}`),
+  j(`/api/history?location=${L}&points=36`),j(`/api/explain?location=${L}`),
+  j('/api/recommendation'),j('/api/events'),j('/api/drift'),j('/api/real-zone')]);
+ if(my!==seq)return; // stale response guard: drop out-of-order renders
+ clearErr();
+ document.getElementById('upd').textContent='Last updated: '+pred.last_updated;
+ document.getElementById('cTraf').innerHTML=pill(cur.congestion_label||'Moderate');
+ document.getElementById('cTrafS').textContent=`${cur.vehicle_count} veh · ${cur.avg_speed} km/h · ${cur.occupancy_pct}% occ`;
+ document.getElementById('cPark').textContent=`${cur.available} / ${cur.capacity}`;
+ document.getElementById('cParkS').textContent=`occupied ${cur.occupied} · ${cur.weather} ${cur.temperature}C`;
+ const p30=pred.predictions[1];
+ document.getElementById('cPred').innerHTML=pill(p30.congestion_label)+` <span style="font-size:16px">${p30.available} slots</span>`;
+ document.getElementById('cPredS').textContent=`${p30.lo}-${p30.hi} (95% CI) · ${p30.vehicles} veh`;
+ let ctx=`sale:${cur.is_sale_day?' YES('+cur.sale_intensity+')':' no'} · event:${cur.is_event_day?cur.event_type+'/'+cur.event_size+' imp'+cur.event_impact:' none'} · peak:${cur.is_peak_hour?'yes':'no'}`;
+ document.getElementById('cCtx').textContent=ctx;
+ // alerts
+ let a='';
+ const ev=evs.find(e=>e.location===L);
+ if(ev)a+=`<div class="alert">UPCOMING EVENT — ${ev.name} · ${ev.start}-${ev.end} · impact ${ev.event_impact} · Now ${cur.available} → 30min ${p30.available} → 60min ${pred.predictions[3].available}</div>`;
+ if(cur.is_sale_day)a+=`<div class="alert" style="border-color:#38bdf8">MEGA SALE TODAY — intensity ${cur.sale_intensity} · expect HIGH parking demand</div>`;
+ if(pred.critical_in_min)a+=`<div class="alert" style="border-color:#ef4444">Critical occupancy (&gt;90%) expected in ~${pred.critical_in_min} min</div>`;
+ if(cur.is_incident)a+=`<div class="alert" style="border-color:#ef4444">SIMULATED INCIDENT — ${cur.incident_kind} in this zone (severity ${cur.incident_severity}). Expect congestion spike; watch recovery.</div>`;
+ const drifted=Object.entries(drift||{}).filter(([k,v])=>v.drift);
+ if(drifted.length)a+=`<div class="alert" style="border-color:#ef4444">DRIFT DETECTED (ADWIN) — ${drifted.map(([k,v])=>k+' MAE '+v.recent_mae).join('; ')}. Model may be stale: consider retraining.</div>`;
+ document.getElementById('alerts').innerHTML=a;
+ // charts
+ if(!hist.length){document.getElementById('ftab').innerHTML=`<tr><td colspan="5">No history yet — press Step to advance the simulator.</td></tr>`;return;}
+ const hl=hist.map(h=>h.timestamp.slice(11,16)),hv=hist.map(h=>h.vehicle_count);
+ const fl=['+15','+30','+45','+60'],fv=pred.predictions.map(p=>p.vehicles);
+ chT.data.labels=[...hl,...fl];chT.data.datasets[0].data=[...hv,...Array(4).fill(null)];
+ chT.data.datasets[1].data=[...Array(hv.length-1).fill(null),hv[hv.length-1],...fv];chT.update();
+ chP.data.labels=['Now',...fl];
+ chP.data.datasets[0].data=[cur.available,...pred.predictions.map(p=>p.available)];
+ chP.data.datasets[1].data=[cur.available,...pred.predictions.map(p=>p.lo)];
+ chP.data.datasets[2].data=[cur.available,...pred.predictions.map(p=>p.hi)];chP.update();
+ // table
+ const cal=(pred.calibration||{})["30"]||{};
+ document.getElementById('cov').textContent=`90% bands via ${pred.interval_method||'?'} · walk-forward coverage ${cal.empirical_coverage??'-'}`;
+ document.getElementById('ftab').innerHTML=`<tr><td>Now</td><td>${cur.available}</td><td>-</td><td>${cur.vehicle_count}</td><td>${pill(cur.congestion_label)}</td></tr>`+
+  pred.predictions.map(p=>`<tr><td>+${p.horizon_min}</td><td>${p.available}</td><td>${p.lo}-${p.hi}</td><td>${p.vehicles}</td><td>${pill(p.congestion_label)}</td></tr>`).join('');
+ // explain
+ const mx=Math.max(...expl.factors.map(f=>f.importance),0.01);
+ document.getElementById('expl').innerHTML=expl.factors.map(f=>`<div style="margin:6px 0"><small>${f.feature} (${f.value})</small><div class="bar"><i style="width:${(f.importance/mx*100).toFixed(0)}%"></i></div></div>`).join('')||'train model to see importance';
+ // rec
+ document.getElementById('rec').innerHTML=`<b>${rec.message}</b><br/><br/>`+rec.ranking.map(r=>`${r.label}: now ${r.now_available} → 30min ${r.pred30_available} ${pill(r.congestion_label)}`).join('<br/>')+(rec.warnings.length?'<br/><br/>⚠ '+rec.warnings.join('<br/>'):'');
+ // heatmap
+ const stats=await Promise.all(locs.map(async l=>({m:l,...await j(`/api/current-status?location=${l.id}`)})));
+ document.getElementById('heat').innerHTML=stats.map(s=>{
+  const c=s.congestion<25?'#22c55e':s.congestion<50?'#eab308':s.congestion<70?'#f97316':'#ef4444';
+  return `<div class="hz"><span class="dot" style="background:${c}"></span><b>${s.m.label}</b><br/>${s.congestion_label} · ${s.available} slots (${(100-s.occupancy_pct).toFixed(0)}% free)</div>`;}).join('');
+ // real zone (replay; ML validation in report E06, skill +0.62 vs persistence)
+ document.getElementById('realz').innerHTML=
+  `<b>${realz.now.available} / ${realz.now.capacity} slots free</b> ${pill(realz.now.congestion_label)}<br/>`+
+  `<small>recorded ${realz.now.timestamp} · replay ${realz.now.replay_index+1}/${realz.now.replay_len} · `+
+  `persistence forecast holds ${realz.forecast[1].available} @30min · source: ${realz.meta.source}</small>`;
+ }catch(e){ if(my===seq)showErr(e.message); }
+ finally{ if(my===seq)setBusy(false); }
+}
+init();
+</script>
+</body></html>

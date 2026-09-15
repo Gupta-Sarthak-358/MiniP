@@ -1,0 +1,218 @@
+{
+  "ar24_av": {
+    "available_15": {
+      "MAE": 5.05,
+      "RMSE": 7.062
+    },
+    "available_30": {
+      "MAE": 6.788,
+      "RMSE": 9.501,
+      "skill_vs_persist": -0.1338
+    },
+    "available_45": {
+      "MAE": 8.439,
+      "RMSE": 11.892
+    },
+    "available_60": {
+      "MAE": 10.053,
+      "RMSE": 14.224
+    }
+  },
+  "ar24_veh": {
+    "vehicles_15": {
+      "MAE": 54.297,
+      "RMSE": 82.479
+    },
+    "vehicles_30": {
+      "MAE": 60.129,
+      "RMSE": 89.274,
+      "skill_vs_persist": -0.0513
+    },
+    "vehicles_45": {
+      "MAE": 65.196,
+      "RMSE": 95.125
+    },
+    "vehicles_60": {
+      "MAE": 70.273,
+      "RMSE": 101.058
+    }
+  },
+  "ha_av": {
+    "available_15": {
+      "MAE": 26.367,
+      "RMSE": 47.199
+    },
+    "available_30": {
+      "MAE": 26.345,
+      "RMSE": 47.193,
+      "skill_vs_persist": -3.4004
+    },
+    "available_45": {
+      "MAE": 26.323,
+      "RMSE": 47.187
+    },
+    "available_60": {
+      "MAE": 26.3,
+      "RMSE": 47.181
+    }
+  },
+  "ha_veh": {
+    "vehicles_15": {
+      "MAE": 37.099,
+      "RMSE": 56.992
+    },
+    "vehicles_30": {
+      "MAE": 37.105,
+      "RMSE": 56.999,
+      "skill_vs_persist": 0.3512
+    },
+    "vehicles_45": {
+      "MAE": 37.104,
+      "RMSE": 56.996
+    },
+    "vehicles_60": {
+      "MAE": 37.099,
+      "RMSE": 56.985
+    }
+  },
+  "hw_av": {
+    "available_15": {
+      "MAE": 3.586,
+      "RMSE": 5.246
+    },
+    "available_30": {
+      "MAE": 5.987,
+      "RMSE": 8.809,
+      "skill_vs_persist": 0.0
+    },
+    "available_45": {
+      "MAE": 8.227,
+      "RMSE": 12.171
+    },
+    "available_60": {
+      "MAE": 10.357,
+      "RMSE": 15.382
+    }
+  },
+  "lr_av": {
+    "available_15": {
+      "MAE": 3.482,
+      "RMSE": 4.895
+    },
+    "available_30": {
+      "MAE": 5.776,
+      "RMSE": 8.039,
+      "skill_vs_persist": 0.0352
+    },
+    "available_45": {
+      "MAE": 7.895,
+      "RMSE": 11.01
+    },
+    "available_60": {
+      "MAE": 9.911,
+      "RMSE": 13.846
+    }
+  },
+  "persistence_av": {
+    "available_15": {
+      "MAE": 3.586,
+      "RMSE": 5.234
+    },
+    "available_30": {
+      "MAE": 5.987,
+      "RMSE": 8.783,
+      "skill_vs_persist": 0.0
+    },
+    "available_45": {
+      "MAE": 8.227,
+      "RMSE": 12.128
+    },
+    "available_60": {
+      "MAE": 10.357,
+      "RMSE": 15.322
+    }
+  },
+  "persistence_veh": {
+    "vehicles_15": {
+      "MAE": 49.875,
+      "RMSE": 80.764
+    },
+    "vehicles_30": {
+      "MAE": 57.194,
+      "RMSE": 93.357,
+      "skill_vs_persist": 0.0
+    },
+    "vehicles_45": {
+      "MAE": 64.046,
+      "RMSE": 103.97
+    },
+    "vehicles_60": {
+      "MAE": 70.883,
+      "RMSE": 113.504
+    }
+  },
+  "rf_av": {
+    "available_15": {
+      "MAE": 2.935,
+      "RMSE": 4.305
+    },
+    "available_30": {
+      "MAE": 4.307,
+      "RMSE": 6.479,
+      "skill_vs_persist": 0.2806
+    },
+    "available_45": {
+      "MAE": 5.442,
+      "RMSE": 8.432
+    },
+    "available_60": {
+      "MAE": 6.373,
+      "RMSE": 10.047
+    }
+  },
+  "rf_veh": {
+    "vehicles_15": {
+      "MAE": 32.581,
+      "RMSE": 49.55
+    },
+    "vehicles_30": {
+      "MAE": 32.94,
+      "RMSE": 50.331,
+      "skill_vs_persist": 0.4241
+    },
+    "vehicles_45": {
+      "MAE": 32.996,
+      "RMSE": 50.46
+    },
+    "vehicles_60": {
+      "MAE": 33.579,
+      "RMSE": 51.399
+    }
+  },
+  "seasonal_av": {
+    "available_15": {
+      "MAE": 30.3,
+      "RMSE": 58.687
+    },
+    "available_30": {
+      "MAE": 30.264,
+      "RMSE": 58.634,
+      "skill_vs_persist": -4.055
+    },
+    "available_45": {
+      "MAE": 30.23,
+      "RMSE": 58.589
+    },
+    "available_60": {
+      "MAE": 30.196,
+      "RMSE": 58.553
+    }
+  },
+  "xgb_av30": {
+    "available_30": {
+      "MAE": 4.069,
+      "RMSE": 5.951,
+      "skill_vs_persist": 0.3204
+    }
+  }
+}
