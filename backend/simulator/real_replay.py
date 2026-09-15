@@ -22,10 +22,10 @@ class Replay:
 
     def current(self):
         r = self.df.iloc[self.i]
-        avail = float(r["available"])
+        avail = int(round(float(r["available"])))
         return {"timestamp": r["timestamp"].isoformat() if hasattr(r["timestamp"], "isoformat") else str(r["timestamp"]),
                 "location": "birmingham", "capacity": int(r["capacity"]),
-                "occupied": round(float(r["occupied"]), 1), "available": round(avail, 1),
+                "occupied": int(round(float(r["occupied"]))), "available": avail,
                 "occupancy_pct": round(float(r["occupancy_pct"]), 1),
                 "congestion_label": "Low" if r["occupancy_pct"] < 50 else ("Moderate" if r["occupancy_pct"] < 75 else ("High" if r["occupancy_pct"] < 90 else "Severe")),
                 "is_real": True, "replay_index": int(self.i), "replay_len": len(self.df)}
