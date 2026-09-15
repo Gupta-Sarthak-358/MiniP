@@ -74,6 +74,7 @@ tests/                   17 regression tests
 ```
 
 Read: `docs/REPORT.md` (full report) · `docs/PRESENTATION.md` (slide deck) ·
+`docs/FRONTEND_SPEC.md` (designer handoff for the dashboard redesign) ·
 `docs/EXPERIMENTS.md` (E01–E06 + failure logs) · `docs/DECISIONS.md` (D01–D14) ·
 `docs/figures/` (7 charts) · `RESEARCH_UPGRADES.md` (lit review → plan).
 
