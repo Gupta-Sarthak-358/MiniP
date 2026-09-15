@@ -10,12 +10,33 @@ BASE = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 MODEL_DIR = os.path.join(BASE, "models")
 
 _avail = None; _veh = None; _meta = None; _metrics = None; _conf = None
+_ZIPS = ("models_rf_avail.zip", "models_rf_veh.zip", "models_rest.zip")
+
+def _load_bin(name):
+    """Load a model binary: raw file first, else transparently from shipped zips
+    (repo tracks *.zip because GitHub blocks the raw >100MB pickles)."""
+    p = os.path.join(MODEL_DIR, name)
+    if os.path.exists(p):
+        return joblib.load(p)
+    import zipfile
+    for zn in _ZIPS:
+        zp = os.path.join(MODEL_DIR, zn)
+        if os.path.exists(zp):
+            try:
+                with zipfile.ZipFile(zp) as zh:
+                    if name in zh.namelist():
+                        with zh.open(name) as f:
+                            return joblib.load(f)
+            except Exception:
+                continue
+    raise FileNotFoundError(f"{name} missing (looked in {MODEL_DIR} + zips). "
+                            "Run backend/model/train.py or models/unpack.py.")
 
 def load():
     global _avail, _veh, _meta, _metrics, _conf
     if _avail is None:
-        _avail = joblib.load(os.path.join(MODEL_DIR, "model_avail.pkl"))
-        _veh = joblib.load(os.path.join(MODEL_DIR, "model_veh.pkl"))
+        _avail = _load_bin("model_avail.pkl")
+        _veh = _load_bin("model_veh.pkl")
         _meta = json.load(open(os.path.join(MODEL_DIR, "meta.json")))
         try:
             _metrics = json.load(open(os.path.join(MODEL_DIR, "metrics.json")))

@@ -4,7 +4,7 @@ Context-aware ML system forecasting congestion + parking (15/30/45/60 min) from 
 
 ## Fresh-clone setup (teammates — read this first)
 
-Big files (`data/historical.csv`, `models/*.pkl`) are git-ignored and **regenerated** — never committed (GitHub blocks >100 MB). Small data, docs, metrics and figures ARE committed. Use `PY` = your Python (Mnemo `.venv` if you have it, else any 3.11 + `pip install -r requirements.txt`):
+Big files (`data/historical.csv`, raw `models/*.pkl`) are git-ignored and **regenerated** — never committed (GitHub blocks >100 MB). Small data, docs, metrics and figures ARE committed. **Trained models ship as split zips** (`models/models_rf_*.zip`, `models_rest.zip`, each <100 MB) which `predict.py` loads transparently — zero setup. Use `PY` = your Python (Mnemo `.venv` if you have it, else any 3.11 + `pip install -r requirements.txt`):
 
 ```powershell
 PY backend\simulator\generate_dataset.py   # ~40 s  -> data/historical.csv
