@@ -20,4 +20,5 @@ def test_predict_row_contract():
     for loc in ("mall", "stadium", "station", "office", "residential"):
         preds = predict_row(SIM.current(loc))
         assert [p["horizon_min"] for p in preds] == [15, 30, 45, 60]
-        assert all(type(p["available"]) is float for p in preds)  # JSON-safe, no np.float64
+        assert all(isinstance(p["available"], (int, float)) and not isinstance(p["available"], bool) for p in preds)  # JSON-safe scalars, slots are ints
+        assert all(float(p["available"]).is_integer() for p in preds)  # no fractional parking slots

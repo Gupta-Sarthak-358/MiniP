@@ -101,11 +101,11 @@ def predict_row(feat: dict):
             method = "tree-std (uncalibrated)"
         else:
             method = "conformal-q90 (walk-forward calibrated)"
-        out.append({"horizon_min": h, "available": float(round(a, 1)),
-                    "vehicles": float(round(v, 1)), "congestion": float(round(c, 1)),
+        out.append({"horizon_min": h, "available": int(round(a)),
+                    "vehicles": int(round(v)), "congestion": float(round(c, 1)),
                     "congestion_label": cong_label(c),
-                    "lo": float(round(max(0, a - float(q)), 1)),
-                    "hi": float(round(min(cap, a + float(q)), 1)),
+                    "lo": int(round(max(0, a - float(q)))),
+                    "hi": int(round(min(cap, a + float(q)))),
                     "interval": method})
     return out
 
