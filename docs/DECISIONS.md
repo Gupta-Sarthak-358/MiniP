@@ -45,3 +45,6 @@ Status: accepted. Rationale: global MAE averages rare events away (E03: context 
 
 ## D15 - Build new dashboard on the stitch shell, keep live behavior (2026-09-15)
 Status: accepted. Rationale: designer delivered full ATC console matching our tokens/spec. Rebuilt frontend/index.html on their verbatim shell (tokens, tiers, components) and wired every region to real APIs via build_frontend*.py scripts (anchors asserted, kept in Temp). Chart.js replaces static SVG so data stays live; mock fictions (facility names, MAE 1.84, UTC clock, external logo) replaced with measured values. Mobile: single responsive file (sidebar hidden <lg), matching the mobile mock stacking.
+
+## D16 - Designer source folder removed from repo (2026-09-15)
+Status: accepted. Rationale: implemented design lives in frontend/index.html; pressed PNGs/specs were bloat. E07/D15 + FRONTEND_SPEC.md retain the record.
