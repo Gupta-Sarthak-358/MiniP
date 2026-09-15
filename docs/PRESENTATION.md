@@ -1,123 +1,135 @@
-# Real-Time Traffic & Parking Predictor — Presentation Deck
-*Present from this file. Images render on GitHub. Numbers trace to `models/*.json`; stories trace to `docs/EXPERIMENTS.md` (E01–E06) and `docs/DECISIONS.md` (D01–D14). Full text: `docs/REPORT.md`.*
+# Real-Time Traffic & Parking Predictor
+### A context-aware, uncertainty-aware, drift-monitored forecasting system — validated on simulated + real sensor data
+*Present from this file. All charts embedded · all numbers inline (traceable to `models/*.json`) · diagrams render as mermaid on GitHub.*
 
 ---
 
-## Slide 1 — Title
-**Real-Time Traffic & Parking Availability Predictor**
-*A context-aware, uncertainty-aware, drift-monitored forecasting system — validated on simulated + real sensor data.*
-Team · Course · Date
+## 1 · Problem: current-status dashboards can't see what's coming
+At 5 PM a lot shows 30 free spaces — but a 6 PM concert empties it by 7. We forecast **traffic congestion and parking availability 15/30/45/60 min ahead**, conditioned on time, location, weather, holidays, sales, events and incidents — then explain, recommend, and monitor.
 
 > Say: "We don't just predict parking — we prove the predictions are honest, explain them, and watch the model stay valid live."
 
 ---
 
-## Slide 2 — Problem (why current-status isn't enough)
-At 5 PM a lot shows 30 free spaces — but a 6 PM concert empties it by 7. Current-status dashboards can't see that coming. We forecast **15/30/45/60 min ahead**, conditioned on time, weather, sales, events and incidents.
-Details: `PROJECT_PS.md`.
-
----
-
-## Slide 3 — System pipeline
+## 2 · System pipeline
+```mermaid
+flowchart LR
+    A[Real Birmingham sensors<br/>+ causal simulator] --> B[Features<br/>time · occupancy · weather<br/>events · sales · incidents]
+    B --> C[Train<br/>Linear / RF / XGB-GPU / LSTM]
+    C --> D[Walk-forward test<br/>vs 5 baselines]
+    D --> E[Serve<br/>FastAPI → dashboard]
+    E --> F[Monitor<br/>ADWIN drift alarm → retrain]
 ```
-Real Birmingham sensors + causal simulator
-        ↓
-Features: time · occupancy · weather · events · sales · incidents
-        ↓
-Train (RF / XGB-GPU / LSTM) — train-only stats, no peeking
-        ↓
-Walk-forward test vs 5 baselines (persistence is the one to beat)
-        ↓
-Serve: FastAPI → dashboard (forecast + bands + heatmap + advice)
-        ↓
-Monitor: every forecast checked 30 min later → ADWIN drift alarm → retrain
+
+```mermaid
+flowchart TD
+    subgraph LIVE["Live loop (every step)"]
+    P[Forecast +30m] --> W[Wait 2 steps] --> R[Pair with truth<br/>residual] --> M{ADWIN alarm?}
+    M -- no --> P
+    M -- yes --> T[Operator retrains]
+    end
 ```
 
 > Say: "Data flows one way, time always moves forward, and every claim is measured on unseen data."
 
 ---
 
-## Slide 4 — Headline result: the dumb baseline nearly wins
+## 3 · Data: simulated for control, real for credibility
+| Feed | What | Size |
+|---|---|---|
+| Historical (simulated, causal) | 90 days × 15-min × 5 zones, events/sales/weather + 41 incidents | 43,180 rows |
+| Live (simulated sensors) | Stateful stepper, identical physics (train↔serve parity) | 5 zones |
+| Real (UCI Birmingham NCP, UK OGL) | Market lot, cap 577, Oct–Dec 2016, resampled to 15-min | ~2,900 rows |
+Parking follows proportional-turnover dynamics (avg stay ~1.5 h): occupancy spans 25–100% per zone instead of pegging at full.
+
+---
+
+## 4 · Evaluation protocol: the methodology upgrade
+4 expanding walk-forward origins × 5-day test blocks · strictly past→future · train-only imputation · purge of train rows whose 60-min label overlaps the test block · MAE/RMSE per horizon + **skill vs persistence**.
+```mermaid
+flowchart LR
+    T1[Train on past] --> V1[Test next 5d] --> T2[Expand train] --> V2[Test next 5d] --> T3[Expand] --> V3[Test] --> T4[Expand] --> V4[Test]
+```
+
+> Say: "Static splits can reverse model rankings — that's published 2026 finding, so we never use them."
+
+---
+
+## 5 · Headline result: the dumb baseline nearly wins
 ![Walk-forward MAE vs horizon](figures/eval_horizons.png)
+| Model, available_30 | MAE | Skill |
+|---|---|---|
+| Persistence ("no change") | 5.99 | 0.00 |
+| SES / Linear / AR(24) | 5.99 / 5.78 / 6.79 | 0.00 / +0.04 / −0.13 |
+| **Random Forest-100** | **4.31** | **+0.28** |
+| **XGBoost-300 (CUDA)** | **4.07** | **+0.32** |
+| HistAvg / Seasonal-naive | 26.3 / 30.3 | far below |
+| Vehicles_30: persistence 57.2 → **RF 32.9 (+0.42)** | | |
 
-**What it means:** "Persistence" = guessing *no change*. At 30 min it's wrong by only ~6 slots — because parking has inertia. Our XGBoost (4.07) and Random Forest (4.31) beat it, and everything else ties or loses. Error grows with horizon for every model, as physics demands.
-Numbers: `models/eval_walkforward.json` · Story: E02.
-
-> Say: "We proved we beat 'do nothing' instead of just quoting accuracy — most student projects never check this."
+> Say: "Parking has inertia, so 'no change' is brutally strong — we proved we beat it instead of just quoting accuracy. Traffic, with mood swings, is where ML wins big."
 
 ---
 
-## Slide 5 — Who beats "nothing changes"?
+## 6 · Who beats "nothing changes"?
 ![Skill vs persistence at 30 min](figures/baselines_skill.png)
-
-**What it means:** bars above zero = genuinely useful; below = worse than guessing. Only the context-aware ML models clear the bar. Seasonal patterns and plain averages fail — our simulated weeks (like real life) aren't self-similar.
-Story: E02 · Decision: D04/D05.
+Only context-aware ML clears zero. Weekly-seasonal logic fails — real (and realistic simulated) weeks aren't self-similar. An honest negative result, kept in the report.
 
 ---
 
-## Slide 6 — Ablation: which information helps?
+## 7 · Ablation: which information helps?
 ![Ablation over feature groups](figures/ablation_mae.png)
-
-**What it means:** knowing the *current* situation does almost everything (error 26 → 4). Weather/events/sales add ~nothing **on average** — because events are rare and averages hide them. So we asked *when* they help (next slide). Don't hide flat results; explain them.
-Numbers: `models/ablation.json` · Story: E03.
-
-> Say: "This is the experiment our assessor asked for — and it surprised us, which is why we kept digging."
+`available_30` MAE: time-only **26.35** → +state **4.42** → +weather 4.44 → +event 4.45 → +sale/hol 4.42 → +incident 4.43. Current state does ~everything **globally** — because events are rare and averages hide them. So we asked *when* context helps (next slide).
 
 ---
 
-## Slide 7 — Context pays exactly when conditions are abnormal
+## 8 · Context pays exactly when conditions are abnormal
 ![Conditional slices: RF vs persistence](figures/conditional_mae.png)
-
-**What it means:** rush hour → model wins by 35%. Event days → everyone's error doubles (chaos is hard) but we lose by ~2 fewer slots — exactly when users need us. Incident slice is small (n=39, stated openly).
-Numbers: `models/slice_analysis.json` · Story: E03b · Decision: D13.
+| Slice | RF | Persistence | Skill |
+|---|---|---|---|
+| all (n=8636) | 4.31 | 5.95 | +0.28 |
+| peak-hour (2520) | 4.23 | 6.46 | **+0.35** |
+| event-day (672) | 7.40 | 9.26 | +0.20 (−1.87 slots) |
+| incident (39) | 7.35 | 8.67 | +0.15 (small-n, stated) |
+| sale-day (416) | 5.75 | 6.57 | +0.12 |
 
 ---
 
-## Slide 8 — Honest uncertainty, not decoration
+## 9 · Honest uncertainty, not decoration
 ![Conformal calibration](figures/coverage.png)
-
-**What it means:** bands come from 9,600 real past mistakes (90th percentile per horizon), not a formula. Width grows 6→13 slots into the future; reality lands inside exactly 90.0% of the time. The dashboard prints the method + coverage next to the bands.
-Numbers: `models/conformal.json` · Story: E04 · Decision: D07.
+Bands = 90th percentile of 9,600 walk-forward residuals per horizon: **6.2 / 9.0 / 11.3 / 13.4 slots** — verified **0.900** coverage. The dashboard prints method + coverage beside the bands.
 
 ---
 
-## Slide 9 — The model watches itself go stale
+## 10 · The model watches itself go stale
 ![Residual stream: clean → incident](figures/drift.png)
-
-**What it means:** every forecast is checked 30 min later. A sustained road closure doubles mistakes (6.7 → 13.8); the ADWIN monitor alarms ~23 steps after onset with zero false alarms on clean stretches. Demo: burn in → Inject incident → banner.
-Story: E05 · Decision: D08 · Endpoint: `/api/drift`.
+Sustained closure doubles mistakes (**6.7 → 13.8**); ADWIN alarms **23 steps** after onset with **0 clean false alarms** (delta 0.002 + 20-pairing warmup). Demo: burn in → Inject incident → banner.
 
 ---
 
-## Slide 10 — Validated on real sensors, not just simulation
+## 11 · Validated on real sensors, not just simulation
 ![Real Birmingham validation](figures/real_validation.png)
-
-**What it means:** same experiment on a real Birmingham car park (UCI id=482, UK Open Government Licence): persistence 20.7 → RF 7.8 (**skill +0.62**). Real sensors are ~3× noisier than sim — and the ML edge is ~2× bigger. Same pattern, stronger. Live replay card on the dashboard streams this lot.
-Numbers: `models/real_eval.json` · Story: E06 · Decision: D14.
+Walk-forward on the Birmingham lot: persistence 20.67 → HistAvg 25.41 → **RF 7.81 (skill +0.62)**. Real sensors are ~3× noisier than sim — and the ML edge is ~2× bigger. Same pattern, stronger.
 
 > Say: "Simulated for controlled experiments, validated against a real zone — that answers 'but your data is fake'."
 
 ---
 
-## Slide 11 — Failures we kept (viva gold)
-- Textbook smoother **blew up** (error 192) on clipped occupancy → diagnosed, replaced (E02a).
-- LSTM scored **worse than average** twice (unnormalized targets; wrong data split) → fixed (E01b/c).
-- First simulator had **every lot permanently full** (arrival/drain bug) → rebalanced (D10).
-- Drift alarms **never fired** (renamed River API + pairing bug) → found, fixed, calibrated (E05).
-
-> Say: "Each failure is logged with evidence in EXPERIMENTS.md — ask us about any of them."
+## 12 · Dashboard tour (live after these slides)
+Command strip (sector · time-travel · auto-sync · inject) → severity-ordered alert lane → 3 hero pillars (horizon-switchable forecast) → live charts + step table → RF-importance bars → ranked routing → saturation grid → Birmingham replay card → provenance footer. Profile button carries model/coverage/skill facts.
 
 ---
 
-## Slide 12 — Live demo (5 min)
-1. Cards + 15–60 min forecast with 90% bands (coverage chip). 2. Heatmap. 3. **Inject incident** → spike → recovery. 4. Sustained incident → **drift banner**. 5. Explain bars. 6. Birmingham real-zone card.
+## 13 · Failures we kept (viva gold)
+- Textbook smoother **blew up** (MAE 192) on clipped occupancy → diagnosed, replaced.
+- LSTM scored **worse than average twice** → fixed via target normalization + per-location splits (final: MAE 7.9, R² 0.994).
+- First simulator pegged **every lot at 99% full** → rebalanced with realistic turnover.
+- Drift alarms **never fired** (renamed River API + pairing bug) → found, fixed, calibrated.
+> Say: "Each failure is logged with evidence — ask us about any of them."
 
 ---
 
-## Slide 13 — Limits & next steps (honest, specific)
-Daytime-only 2016 real data · single real lot · zones learn independently (scoped next step: 1-block STGCN over a zone graph, D09) · in-fold conformal calibration → nested · no auth/rate-limit (demo CORS flagged in code).
+## 14 · Limits & next steps (specific, not vague)
+Daytime-only 2016 real data · single real lot · zones learn independently (scoped next step: 1-block STGCN over zone adjacency) · in-fold conformal calibration → nested · demo CORS + no auth flagged as deployment work.
 
----
-
-## Slide 14 — Where everything lives
-`docs/REPORT.md` (report) · `docs/EXPERIMENTS.md` (E01–E06 + failures) · `docs/DECISIONS.md` (D01–D14) · `docs/figures/` (these 7 charts) · `models/*.json` (exact numbers) · `tests/` (17 green) · `RESEARCH_UPGRADES.md` (literature) · `PROJECT_PS.md` (spec). Regenerate anything via `README.md` setup (big `*.pkl`/CSV files are git-ignored by design).
+## 15 · Artifact map
+`docs/REPORT.md` · `docs/EXPERIMENTS.md` (E01–E07 + failures) · `docs/DECISIONS.md` (D01–D16) · `docs/figures/` (these 7 charts) · `docs/DEMO_AND_VIVA.md` (demo script + Q&A) · `models/*.json` (exact numbers) · `tests/` (18 green) · `RESEARCH_UPGRADES.md` · `PROJECT_PS.md`. Big `*.pkl`/CSV git-ignored by design; trained weights ship as split zips.
