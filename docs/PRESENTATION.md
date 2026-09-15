@@ -7,7 +7,6 @@
 ## 1 · Problem: current-status dashboards can't see what's coming
 At 5 PM a lot shows 30 free spaces — but a 6 PM concert empties it by 7. We forecast **traffic congestion and parking availability 15/30/45/60 min ahead**, conditioned on time, location, weather, holidays, sales, events and incidents — then explain, recommend, and monitor.
 
-> Say: "We don't just predict parking — we prove the predictions are honest, explain them, and watch the model stay valid live."
 
 ---
 
@@ -30,7 +29,6 @@ flowchart TD
     end
 ```
 
-> Say: "Data flows one way, time always moves forward, and every claim is measured on unseen data."
 
 ---
 
@@ -51,7 +49,6 @@ flowchart LR
     T1[Train on past] --> V1[Test next 5d] --> T2[Expand train] --> V2[Test next 5d] --> T3[Expand] --> V3[Test] --> T4[Expand] --> V4[Test]
 ```
 
-> Say: "Static splits can reverse model rankings — that's published 2026 finding, so we never use them."
 
 ---
 
@@ -66,7 +63,6 @@ flowchart LR
 | HistAvg / Seasonal-naive | 26.3 / 30.3 | far below |
 | Vehicles_30: persistence 57.2 → **RF 32.9 (+0.42)** | | |
 
-> Say: "Parking has inertia, so 'no change' is brutally strong — we proved we beat it instead of just quoting accuracy. Traffic, with mood swings, is where ML wins big."
 
 ---
 
@@ -110,7 +106,6 @@ Sustained closure doubles mistakes (**6.7 → 13.8**); ADWIN alarms **23 steps**
 ![Real Birmingham validation](figures/real_validation.png)
 Walk-forward on the Birmingham lot: persistence 20.67 → HistAvg 25.41 → **RF 7.81 (skill +0.62)**. Real sensors are ~3× noisier than sim — and the ML edge is ~2× bigger. Same pattern, stronger.
 
-> Say: "Simulated for controlled experiments, validated against a real zone — that answers 'but your data is fake'."
 
 ---
 
@@ -124,7 +119,6 @@ Command strip (sector · time-travel · auto-sync · inject) → severity-ordere
 - LSTM scored **worse than average twice** → fixed via target normalization + per-location splits (final: MAE 7.9, R² 0.994).
 - First simulator pegged **every lot at 99% full** → rebalanced with realistic turnover.
 - Drift alarms **never fired** (renamed River API + pairing bug) → found, fixed, calibrated.
-> Say: "Each failure is logged with evidence — ask us about any of them."
 
 ---
 
